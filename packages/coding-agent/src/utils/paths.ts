@@ -130,7 +130,9 @@ export function normalizePath(input: string, options: PathInputOptions = {}): st
 	}
 
 	if (options.expandTilde ?? true) {
-		const home = options.homeDir ?? homedir();
+		// Match the rest of the codebase (see getHomeDir in package-manager): honor $HOME
+		// before the OS default, so tilde paths stay consistent when HOME is overridden.
+		const home = options.homeDir ?? (process.env.HOME || homedir());
 		if (normalized === "~") return home;
 		if (normalized.startsWith("~/") || (process.platform === "win32" && normalized.startsWith("~\\"))) {
 			return join(home, normalized.slice(2));

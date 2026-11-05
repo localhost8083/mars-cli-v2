@@ -22,7 +22,9 @@ async function runExternalEditor(fixtureFlag?: "--fail" | "--empty"): Promise<{
 	const capturePath = join(testDirectory, "capture.json");
 	try {
 		const result = await editInExternalEditor({
-			command: `${process.execPath} ${editorFixturePath} ${capturePath}${fixtureFlag ? ` ${fixtureFlag}` : ""}`,
+			// Editors under spaced paths are quoted in the config; process.execPath has
+			// spaces on Windows ("C:\Program Files\...").
+			command: `"${process.execPath}" ${editorFixturePath} ${capturePath}${fixtureFlag ? ` ${fixtureFlag}` : ""}`,
 			content: "original",
 		});
 		const capture = JSON.parse(readFileSync(capturePath, "utf-8")) as EditorCapture;

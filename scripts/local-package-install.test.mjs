@@ -99,7 +99,12 @@ test("wires multiple direct packages without registry fallbacks", (t) => {
 		consumerDirectory,
 		packageNames: ["@pi-package-test/target", "@pi-package-test/second"],
 	});
-	execFileSync("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: consumerDirectory, stdio: "pipe" });
+	// Windows: npm is npm.cmd, which Node can only exec through a shell.
+	execFileSync("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund"], {
+		cwd: consumerDirectory,
+		stdio: "pipe",
+		shell: process.platform === "win32",
+	});
 
 	const manifest = JSON.parse(readFileSync(join(consumerDirectory, "package.json"), "utf8"));
 	assert.match(manifest.dependencies["@pi-package-test/target"], /^file:/);

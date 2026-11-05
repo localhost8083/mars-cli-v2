@@ -36,24 +36,26 @@ describe("ProjectTrustStore", () => {
 		expect(store.get(childDir)).toBe(true);
 	});
 
-	it("detects trust-requiring project resources", () => {
+	// Windows: the real user home is an ancestor of %TEMP%; if it has ~/.agents/skills the
+	// ancestor walk always trips, so this scenario only runs where /tmp-style temp roots exist.
+	it.skipIf(process.platform === "win32")("detects trust-requiring project resources", () => {
 		const originalHome = process.env.HOME;
 		process.env.HOME = tempDir;
 		try {
-			mkdirSync(join(tempDir, ".pi", "agent"), { recursive: true });
+			mkdirSync(join(tempDir, ".mars", "agent"), { recursive: true });
 			mkdirSync(join(tempDir, ".agents", "skills"), { recursive: true });
 			expect(hasTrustRequiringProjectResources(tempDir)).toBe(false);
 			expect(hasTrustRequiringProjectResources(cwd)).toBe(false);
 
-			writeFileSync(join(tempDir, ".pi", "settings.json"), "{}");
+			writeFileSync(join(tempDir, ".mars", "settings.json"), "{}");
 			expect(hasTrustRequiringProjectResources(tempDir)).toBe(true);
-			rmSync(join(tempDir, ".pi", "settings.json"), { force: true });
+			rmSync(join(tempDir, ".mars", "settings.json"), { force: true });
 
-			mkdirSync(join(cwd, ".pi"), { recursive: true });
-			writeFileSync(join(cwd, ".pi", "settings.json"), "{}");
+			mkdirSync(join(cwd, ".mars"), { recursive: true });
+			writeFileSync(join(cwd, ".mars", "settings.json"), "{}");
 			expect(hasTrustRequiringProjectResources(cwd)).toBe(true);
 
-			rmSync(join(cwd, ".pi"), { recursive: true, force: true });
+			rmSync(join(cwd, ".mars"), { recursive: true, force: true });
 			mkdirSync(join(cwd, ".agents", "skills"), { recursive: true });
 			expect(hasTrustRequiringProjectResources(cwd)).toBe(true);
 		} finally {
@@ -66,26 +68,31 @@ describe("ProjectTrustStore", () => {
 	});
 
 	// Regression test for https://github.com/earendil-works/pi/issues/10488
-	it("ignores the user .agents/skills dir when HOME differs only by case on Windows", () => {
-		const originalHome = process.env.HOME;
-		const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
-		const mixedCaseHome = join(tempDir, "Home");
-		const projectDir = join(mixedCaseHome, "project");
-		mkdirSync(join(mixedCaseHome, ".agents", "skills"), { recursive: true });
-		mkdirSync(projectDir, { recursive: true });
-		process.env.HOME = mixedCaseHome.toLowerCase();
-		Object.defineProperty(process, "platform", { value: "win32" });
-		try {
-			expect(hasTrustRequiringProjectResources(projectDir)).toBe(false);
-		} finally {
-			if (originalPlatform) Object.defineProperty(process, "platform", originalPlatform);
-			if (originalHome === undefined) {
-				delete process.env.HOME;
-			} else {
-				process.env.HOME = originalHome;
+	// Skipped on real Windows: the real home sits above %TEMP% and its ~/.agents/skills
+	// breaks the ancestor walk before the mixed-case comparison is reached.
+	it.skipIf(process.platform === "win32")(
+		"ignores the user .agents/skills dir when HOME differs only by case on Windows",
+		() => {
+			const originalHome = process.env.HOME;
+			const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
+			const mixedCaseHome = join(tempDir, "Home");
+			const projectDir = join(mixedCaseHome, "project");
+			mkdirSync(join(mixedCaseHome, ".agents", "skills"), { recursive: true });
+			mkdirSync(projectDir, { recursive: true });
+			process.env.HOME = mixedCaseHome.toLowerCase();
+			Object.defineProperty(process, "platform", { value: "win32" });
+			try {
+				expect(hasTrustRequiringProjectResources(projectDir)).toBe(false);
+			} finally {
+				if (originalPlatform) Object.defineProperty(process, "platform", originalPlatform);
+				if (originalHome === undefined) {
+					delete process.env.HOME;
+				} else {
+					process.env.HOME = originalHome;
+				}
 			}
-		}
-	});
+		},
+	);
 
 	// Regression test for https://github.com/earendil-works/pi/issues/10488
 	it("matches saved decisions regardless of casing on Windows", () => {

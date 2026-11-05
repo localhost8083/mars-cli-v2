@@ -451,7 +451,10 @@ describe("Coding Agent Tools", () => {
 					path: testFile,
 					edits: [{ oldText: "hello", newText: "world" }],
 				}),
-			).rejects.toThrow(`Could not edit file: ${testFile}. Error code: EACCES.`);
+			).rejects.toThrow(
+				// Windows maps the read-only attribute to EPERM instead of EACCES.
+				`Could not edit file: ${testFile}. Error code: ${process.platform === "win32" ? "EPERM" : "EACCES"}.`,
+			);
 		});
 
 		it("should include the original error message for unknown edit access errors", async () => {
@@ -480,15 +483,20 @@ describe("Coding Agent Tools", () => {
 			expect(result).toEqual({ error: `Could not edit file: ${missingFile}. Error code: ENOENT.` });
 		});
 
-		it("should include EACCES in diff preview for unreadable files", async () => {
-			const unreadableFile = join(testDir, "unreadable-preview.txt");
-			writeFileSync(unreadableFile, "hello\n");
-			chmodSync(unreadableFile, 0o222);
+		// Windows: the read-only attribute blocks writes, not reads, so chmod cannot
+		// produce a file whose read (for the diff preview) fails.
+		it.skipIf(process.platform === "win32")(
+			"should include EACCES in diff preview for unreadable files",
+			async () => {
+				const unreadableFile = join(testDir, "unreadable-preview.txt");
+				writeFileSync(unreadableFile, "hello\n");
+				chmodSync(unreadableFile, 0o222);
 
-			const result = await computeEditsDiff(unreadableFile, [{ oldText: "hello", newText: "world" }], testDir);
+				const result = await computeEditsDiff(unreadableFile, [{ oldText: "hello", newText: "world" }], testDir);
 
-			expect(result).toEqual({ error: `Could not edit file: ${unreadableFile}. Error code: EACCES.` });
-		});
+				expect(result).toEqual({ error: `Could not edit file: ${unreadableFile}. Error code: EACCES.` });
+			},
+		);
 	});
 
 	describe("bash tool", () => {
@@ -1102,7 +1110,10 @@ describe("Coding Agent Tools", () => {
 			writeFileSync(testFile, "target\n");
 
 			const result = await grepTool.execute("test-call-grep-injection", {
-				pattern: `--pre=${payload}`,
+				// Forward slashes keep the pattern a valid regex on Windows (backslash
+				// escapes would fail rg's regex parser); the flag-like `--pre=` prefix
+				// under test is unaffected.
+				pattern: `--pre=${payload.replaceAll("\\", "/")}`,
 				path: testDir,
 			});
 
@@ -1381,7 +1392,9 @@ describe("tool cwd resolution", () => {
 		expect(output).toContain("ctx-cwd-ls.txt");
 	});
 
-	it("bash uses ctx.cwd when provided", async () => {
+	// Git Bash reports pwd in msys form (/c/Users/...), so the Windows ctx.cwd
+	// string can never appear in the output; the cwd plumbing itself is unchanged.
+	it.skipIf(process.platform === "win32")("bash uses ctx.cwd when provided", async () => {
 		const tool = createBashToolDefinition("/", { exposeSessionEnvironment: false });
 		const result = await tool.execute(
 			"test-bash-ctx-cwd",

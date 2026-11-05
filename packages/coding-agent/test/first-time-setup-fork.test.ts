@@ -33,7 +33,8 @@ describe("shouldRunFirstTimeSetup in forked distributions", () => {
 		}
 	});
 
-	it("returns false for a forked package", () => {
-		expect(shouldRunFirstTimeSetup(settingsPath)).toBe(false);
+	// The fork is the official marscli distribution: the package name does not gate setup.
+	it("runs for a forked package name", () => {
+		expect(shouldRunFirstTimeSetup(settingsPath)).toBe(true);
 	});
 });

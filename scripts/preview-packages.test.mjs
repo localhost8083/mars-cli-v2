@@ -79,7 +79,12 @@ test("pack points internal dependencies at the commit's builds and restores pack
 	assert.deepEqual(manifest.packages.map((pkg) => pkg.name).sort(), ["@scope/a", "@scope/b"]);
 	assert.deepEqual(readdirSync(out).sort(), ["manifest.json", ...manifest.packages.map((pkg) => pkg.file)].sort());
 	const fileA = manifest.packages.find((pkg) => pkg.name === "@scope/a").file;
-	const packedA = JSON.parse(execFileSync("tar", ["-xOzf", join(out, fileA), "package/package.json"], { encoding: "utf8" }));
+	// GNU tar reads "C:..." as a remote host; --force-local disables that (GNU-only flag).
+	const tarArgs =
+		process.platform === "win32"
+			? ["--force-local", "-xOzf", join(out, fileA), "package/package.json"]
+			: ["-xOzf", join(out, fileA), "package/package.json"];
+	const packedA = JSON.parse(execFileSync("tar", tarArgs, { encoding: "utf8" }));
 	assert.deepEqual(packedA.dependencies, { "@scope/b": `https://pkg.earendil.com/@scope/b@${sha}`, other: "2.0.0" });
 	assert.equal(readFileSync(join(repo, "packages/a/package.json"), "utf8"), original);
 });

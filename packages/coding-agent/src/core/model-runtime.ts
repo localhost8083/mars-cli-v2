@@ -123,6 +123,12 @@ export interface CreateModelRuntimeOptions {
 	signal?: AbortSignal;
 	/** Skip initial catalog and availability refresh. Static models remain available. */
 	refreshOnCreate?: boolean;
+	/**
+	 * Provider base implementations to register. Defaults to the builtin catalog
+	 * providers (none — MarsAI-only CLI); callers such as tests pass explicit
+	 * providers to exercise the generic machinery with catalog fixtures.
+	 */
+	providers?: readonly Provider[];
 }
 
 export interface ModelRuntimeAuthOverrides extends AuthOperationOptions {
@@ -226,7 +232,12 @@ export class ModelRuntime implements Models {
 				? new FileModelsStore(options.modelsStorePath ?? join(dirname(modelsPath), "models-store.json"))
 				: new InMemoryCodingAgentModelsStore());
 		const builtinModelDataGeneratedAt = builtinProviderCatalog.getBuiltinModelDataGeneratedAt();
-		const providers = builtinProviderCatalog.builtinProviders().map((provider) => {
+		// Radius stays registered in every runtime: it is this CLI's OAuth-gateway
+		// machinery and its models only appear once credentials configure it.
+		const providers = [
+			builtinProviderCatalog.radiusProvider(),
+			...(options.providers ?? builtinProviderCatalog.builtinProviders()),
+		].map((provider) => {
 			if (provider.id === "radius") return provider;
 			// OpenRouter narrows the catalog to the models, limits and prices of the user's key.
 			if (provider.id === "openrouter") {
@@ -237,6 +248,7 @@ export class ModelRuntime implements Models {
 					builtinModelDataGeneratedAt,
 				);
 			}
+			if (options.providers) return provider;
 			return withRemoteCatalog(provider, options.catalogBaseUrl, builtinModelDataGeneratedAt);
 		});
 		const runtime = new ModelRuntime(

@@ -1,4 +1,4 @@
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 import { type Component, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import type { AgentSession } from "../../../core/agent-session.ts";
 import { areExperimentalFeaturesEnabled } from "../../../core/experimental.ts";
@@ -38,10 +38,15 @@ export function formatCwdForFooter(cwd: string, home: string | undefined): strin
 	const relativeToHome = relative(resolvedHome, resolvedCwd);
 	const isInsideHome =
 		relativeToHome === "" ||
-		(relativeToHome !== ".." && !relativeToHome.startsWith(`..${sep}`) && !isAbsolute(relativeToHome));
+		// relative() escapes home only as ".." or "..<sep>..."; "..foo"-style names cannot occur.
+		(relativeToHome !== ".." &&
+			!relativeToHome.startsWith("../") &&
+			!relativeToHome.startsWith("..\\") &&
+			!isAbsolute(relativeToHome));
 
 	if (!isInsideHome) return cwd;
-	return relativeToHome === "" ? "~" : `~${sep}${relativeToHome}`;
+	// Display convention: `~` abbreviations always render with `/`, not the platform separator.
+	return relativeToHome === "" ? "~" : `~/${relativeToHome}`;
 }
 
 interface SessionStats {

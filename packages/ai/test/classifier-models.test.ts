@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { InMemoryCredentialStore } from "../src/auth/credential-store.ts";
-import { createModels, createProvider, getModelType } from "../src/models.ts";
-import {
-	builtinModels,
-	getAllBuiltinModels,
-	getBuiltinClassifierModel,
-	getBuiltinClassifierModels,
-} from "../src/providers/all.ts";
+import { type CreateModelsOptions, createModels, createProvider, getModelType, type Provider } from "../src/models.ts";
+import { getAllBuiltinModels, getBuiltinClassifierModel, getBuiltinClassifierModels } from "../src/providers/all.ts";
+import { githubCopilotProvider } from "../src/providers/github-copilot.ts";
+import { openaiProvider } from "../src/providers/openai.ts";
+import { opencodeProvider } from "../src/providers/opencode.ts";
+import { openrouterProvider } from "../src/providers/openrouter.ts";
+import { typesafeProvider } from "../src/providers/typesafe.ts";
+import { vercelAIGatewayProvider } from "../src/providers/vercel-ai-gateway.ts";
 import type { Api, ClassifierApi, ClassifierContext, ClassifierModel, ClassifierResult, Model } from "../src/types.ts";
 import { AssistantMessageEventStream } from "../src/utils/event-stream.ts";
 
@@ -49,6 +50,13 @@ const context: ClassifierContext = {
 		},
 	},
 };
+
+/** MARS CLI registers no built-in providers, so classifier tests inject the factories they exercise. */
+function modelsWithProviders(providers: Provider[], options?: CreateModelsOptions) {
+	const models = createModels(options);
+	for (const provider of providers) models.setProvider(provider);
+	return models;
+}
 
 describe("Models with classifier models", () => {
 	it("keeps chat and classifier entries with the same provider and id separate", async () => {
@@ -123,7 +131,7 @@ describe("Models with classifier models", () => {
 		expect(getBuiltinClassifierModels("typesafe")).toEqual([jev]);
 		expect(getAllBuiltinModels("typesafe")).toEqual([jev]);
 
-		const models = builtinModels();
+		const models = modelsWithProviders([typesafeProvider()]);
 		expect(models.getModel("typesafe", "jev-latest")).toBeUndefined();
 		expect(models.getModelOfType("classifier", "typesafe", "jev-latest")).toEqual(jev);
 	});
@@ -133,7 +141,11 @@ describe("Models with classifier models", () => {
 		["opencode", "jev-1.13", "https://opencode.ai/inference/systemone/v1/systemone"],
 		["opencode", "jev-1.13-free", "https://opencode.ai/inference/systemone/v1/systemone"],
 	])("routes %s Jev (%s) to its TypeSafe-compatible endpoint", async (provider, id, url) => {
-		const models = builtinModels();
+		const factories: Record<string, () => Provider> = {
+			"vercel-ai-gateway": vercelAIGatewayProvider,
+			opencode: opencodeProvider,
+		};
+		const models = modelsWithProviders([factories[provider]!()]);
 		const jev = models.getModelOfType("classifier", provider, id);
 		if (!jev) throw new Error(`missing ${provider} Jev model`);
 		expect(jev).toMatchObject({ api: "typesafe-system-one", contextWindow: 32000 });
@@ -198,7 +210,7 @@ describe("Models with classifier models", () => {
 	});
 
 	it("routes OpenAI GPT-6 Luna through the Decisions API with images", async () => {
-		const models = builtinModels();
+		const models = modelsWithProviders([openaiProvider()]);
 		const luna = models.getModelOfType("classifier", "openai", "gpt-6-luna");
 		if (!luna) throw new Error("missing OpenAI Decisions model");
 		expect(luna).toMatchObject({ api: "openai-decisions", input: ["text", "image"], contextWindow: 922000 });
@@ -234,8 +246,8 @@ describe("Models with classifier models", () => {
 			expires: Date.now() + 3_600_000,
 		}));
 
-		const withApiKey = builtinModels({ credentials: apiKeyStore });
-		const withOAuth = builtinModels({ credentials: oauthStore });
+		const withApiKey = modelsWithProviders([openaiProvider()], { credentials: apiKeyStore });
+		const withOAuth = modelsWithProviders([openaiProvider()], { credentials: oauthStore });
 
 		expect((await withApiKey.getAvailableOfType("classifier", "openai")).map((model) => model.id)).toEqual([
 			"gpt-6-luna",
@@ -255,7 +267,7 @@ describe("Models with classifier models", () => {
 			// The login records only picker models; classifiers stay listed.
 			availableModelIds: ["gpt-6-luna"],
 		}));
-		const models = builtinModels({ credentials });
+		const models = modelsWithProviders([githubCopilotProvider()], { credentials });
 		const decision = models.getModelOfType("classifier", "github-copilot", "microsoft-decision-1");
 		if (!decision) throw new Error("missing GitHub Copilot decision model");
 		expect(decision).toMatchObject({
@@ -287,7 +299,7 @@ describe("Models with classifier models", () => {
 	});
 
 	it("adds the System One version prefix to the GitHub Copilot catalog base URL", async () => {
-		const models = builtinModels();
+		const models = modelsWithProviders([githubCopilotProvider()]);
 		const decision = models.getModelOfType("classifier", "github-copilot", "microsoft-decision-1");
 		if (!decision) throw new Error("missing GitHub Copilot decision model");
 		const urls: string[] = [];
@@ -302,7 +314,7 @@ describe("Models with classifier models", () => {
 	});
 
 	it("routes OpenRouter classifier models through the System One API", () => {
-		const models = builtinModels();
+		const models = modelsWithProviders([openrouterProvider()]);
 		for (const model of getBuiltinClassifierModels("openrouter")) {
 			expect(model).toMatchObject({
 				api: "typesafe-system-one",

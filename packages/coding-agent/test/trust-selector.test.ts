@@ -14,7 +14,9 @@ describe("TrustSelectorComponent", () => {
 		setKeybindings(new KeybindingsManager());
 	});
 
-	it("keeps the saved trusted decision marked while browsing", () => {
+	// POSIX-fixture paths: win32 resolves "/project" to "<drive>:\project", so the
+	// rendered labels and update paths only match on POSIX temp roots.
+	it.skipIf(process.platform === "win32")("keeps the saved trusted decision marked while browsing", () => {
 		const selector = new TrustSelectorComponent({
 			cwd: "/project",
 			savedDecision: { path: "/project", decision: true },
@@ -35,7 +37,7 @@ describe("TrustSelectorComponent", () => {
 		expect(output).not.toContain("✓ Do not trust");
 	});
 
-	it("selects a trust decision", () => {
+	it.skipIf(process.platform === "win32")("selects a trust decision", () => {
 		const onSelect = vi.fn();
 		const selector = new TrustSelectorComponent({
 			cwd: "/project",
@@ -64,7 +66,7 @@ describe("TrustSelectorComponent", () => {
 		expect(output).toContain("Saved decision: trusted (inherited from /parent)");
 	});
 
-	it("adds a trust parent option", () => {
+	it.skipIf(process.platform === "win32")("adds a trust parent option", () => {
 		const onSelect = vi.fn();
 		const selector = new TrustSelectorComponent({
 			cwd: "/parent/project",

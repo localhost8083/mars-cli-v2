@@ -2,6 +2,7 @@ import type { CredentialStore } from "@earendil-works/pi-ai";
 import { resolveCliModel } from "../core/model-resolver.ts";
 import { ModelRuntime } from "../core/model-runtime.ts";
 import { InMemoryCodingAgentModelsStore } from "../core/models-store.ts";
+import { marsaiProviderConfig } from "../extensions/marsai/index.ts";
 import type { Args } from "./args.ts";
 import { AuthCommandError, getAuthCredential, validateAuthCommandArgs } from "./auth-command.ts";
 
@@ -64,10 +65,14 @@ export async function getProviderCredential(
 }
 
 export async function createAuthCheckModelRuntime(credentials: CredentialStore): Promise<ModelRuntime> {
-	return ModelRuntime.create({
+	const runtime = await ModelRuntime.create({
 		credentials,
 		modelsStore: new InMemoryCodingAgentModelsStore(),
 		allowModelNetwork: false,
 		refreshOnCreate: false,
 	});
+	// MarsAI is the only provider this CLI ships; extensions normally register it,
+	// but the bare auth-check runtime loads none.
+	runtime.registerProvider("marsai", marsaiProviderConfig());
+	return runtime;
 }

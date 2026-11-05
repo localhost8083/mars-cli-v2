@@ -15,6 +15,7 @@ import {
 import { tmpdir } from "os";
 import { join } from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { APP_NAME } from "../../src/config.ts";
 import { findMostRecentSession, loadEntriesFromFile, SessionManager } from "../../src/core/session-manager.ts";
 import { assistantMsg, readSessionFileRoles, userMsg } from "../utilities.ts";
 
@@ -395,7 +396,7 @@ describe("SessionManager.setSessionFile with corrupted files", () => {
 		writeFileSync(noHeaderFile, originalContent);
 
 		expect(() => SessionManager.open(noHeaderFile, tempDir)).toThrow(
-			`Session file is not a valid pi session: ${noHeaderFile}`,
+			`Session file is not a valid ${APP_NAME} session: ${noHeaderFile}`,
 		);
 		expect(readFileSync(noHeaderFile, "utf-8")).toBe(originalContent);
 	});
@@ -406,7 +407,7 @@ describe("SessionManager.setSessionFile with corrupted files", () => {
 		writeFileSync(nonSessionFile, originalContent);
 
 		expect(() => SessionManager.open(nonSessionFile, tempDir)).toThrow(
-			`Session file is not a valid pi session: ${nonSessionFile}`,
+			`Session file is not a valid ${APP_NAME} session: ${nonSessionFile}`,
 		);
 		expect(readFileSync(nonSessionFile, "utf-8")).toBe(originalContent);
 	});
@@ -492,7 +493,9 @@ describe("SessionManager session file creation", () => {
 		expect(reopened.getBranch().map((entry) => entry.id)).toEqual([firstId, secondId]);
 	});
 
-	it("does not keep an entry in memory when creating the file fails", () => {
+	// Windows: chmod's write bit does not remove directory-write permission, so the
+	// "create fails" scenario cannot be reproduced there.
+	it.skipIf(process.platform === "win32")("does not keep an entry in memory when creating the file fails", () => {
 		const sessionDir = join(tempDir, "sessions");
 		mkdirSync(sessionDir);
 		const session = SessionManager.create(tempDir, sessionDir);

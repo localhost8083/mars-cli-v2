@@ -2,7 +2,8 @@ import { complete, resetApiProviders } from "@earendil-works/pi-ai/compat";
 import { describe, expect, it } from "vitest";
 import { AuthStorage } from "../src/core/auth-storage.ts";
 import { ModelRegistry } from "../src/core/model-registry.ts";
-import { ModelRuntime } from "../src/core/model-runtime.ts";
+import type { ModelRuntime } from "../src/core/model-runtime.ts";
+import { createTestModelRuntime } from "./model-runtime-test-utils.ts";
 
 interface CapturedRequest {
 	url: string;
@@ -40,7 +41,7 @@ async function createCloudflareRuntime(): Promise<{ modelRuntime: ModelRuntime; 
 			CLOUDFLARE_GATEWAY_ID: "test-gateway",
 		},
 	}));
-	const modelRuntime = await ModelRuntime.create({ credentials: authStorage, modelsPath: null });
+	const modelRuntime = await createTestModelRuntime({ credentials: authStorage, modelsPath: null });
 	return { modelRuntime, modelRegistry: new ModelRegistry(modelRuntime) };
 }
 

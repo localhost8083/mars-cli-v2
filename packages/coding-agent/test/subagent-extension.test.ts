@@ -5,10 +5,10 @@ import { fileURLToPath } from "node:url";
 import type { AgentToolResult } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxToolCall, type Message } from "@earendil-works/pi-ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import subagentExtension from "../examples/extensions/subagent/index.ts";
 import { CONFIG_DIR_NAME } from "../src/config.ts";
 import type { ExtensionAPI, ExtensionToolContext, ToolDefinition } from "../src/core/extensions/index.ts";
 import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES } from "../src/core/tools/truncate.ts";
+import subagentExtension from "../src/extensions/subagent/index.ts";
 import { createHarness, type Harness } from "./suite/harness.ts";
 
 const SUBAGENT_FIXTURE_PATH = fileURLToPath(new URL("./fixtures/subagent-child.mjs", import.meta.url));
@@ -293,14 +293,18 @@ describe("subagent example extension", () => {
 			expect(statuses.filter((status) => status === "pending")).toHaveLength(1);
 		});
 
-		it("treats signal termination as a failed child with a diagnostic", async () => {
-			const result = await executeSubagent(singleTask(fixtureScenario.signal));
+		// win32 reports self-SIGTERM as exit code 1 with a null signal, so SIGTERM assertions cannot hold there.
+		it.skipIf(process.platform === "win32")(
+			"treats signal termination as a failed child with a diagnostic",
+			async () => {
+				const result = await executeSubagent(singleTask(fixtureScenario.signal));
 
-			const child = detailsOf(result).results[0];
-			expect(child.status).toBe("failed");
-			expect(child.terminationSignal).toBe("SIGTERM");
-			expect(resultText(result)).toContain("SIGTERM");
-		});
+				const child = detailsOf(result).results[0];
+				expect(child.status).toBe("failed");
+				expect(child.terminationSignal).toBe("SIGTERM");
+				expect(resultText(result)).toContain("SIGTERM");
+			},
+		);
 
 		it("preserves spawn errors for a nonexistent working directory", async () => {
 			const result = await executeSubagent(
@@ -589,7 +593,8 @@ describe("subagent example extension", () => {
 			expect(fullText.split("\n").length).toBeGreaterThan(DEFAULT_MAX_LINES);
 		});
 
-		it("shows failure diagnostics in collapsed results", async () => {
+		// win32 reports self-SIGTERM as exit code 1 with a null signal, so SIGTERM assertions cannot hold there.
+		it.skipIf(process.platform === "win32")("shows failure diagnostics in collapsed results", async () => {
 			const result = await executeSubagent({
 				chain: [{ agent: "worker", task: fixtureScenario.signal }],
 				agentScope: "project",

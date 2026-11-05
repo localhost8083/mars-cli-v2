@@ -18,22 +18,21 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { AgentToolResult, ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { Message } from "@earendil-works/pi-ai";
-import { StringEnum } from "@earendil-works/pi-ai";
-import {
-	CONFIG_DIR_NAME,
-	DEFAULT_MAX_BYTES,
-	DEFAULT_MAX_LINES,
-	type ExtensionAPI,
-	formatReadLineRange,
-	getAgentDir,
-	getMarkdownTheme,
-	type JsonAgentSessionEvent,
-	truncateHead,
-	withFileMutationQueue,
-} from "@earendil-works/pi-coding-agent";
 import { Container, Markdown, Spacer, Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
-import { type AgentConfig, type AgentScope, discoverAgents } from "./agents.ts";
+import { CONFIG_DIR_NAME, getAgentDir } from "../../config.ts";
+// TypeBox-typed StringEnum: the pi-ai root one is pi-schema typed and infers {} inside Type.Object.
+import { StringEnum } from "../../core/extensions/pi-ai-extension-view.ts";
+import type { ExtensionAPI } from "../../core/extensions/types.ts";
+import { withFileMutationQueue } from "../../core/tools/file-mutation-queue.ts";
+import { formatReadLineRange } from "../../core/tools/render-utils.ts";
+import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES, truncateHead } from "../../core/tools/truncate.ts";
+import { getMarkdownTheme } from "../../modes/interactive/theme/theme.ts";
+import type { JsonAgentSessionEvent } from "../../modes/json-event.ts";
+import { cliInvocation } from "../../utils/cli-invocation.ts";
+import { marsFreeModel } from "../marsai/index.ts";
+import { type AgentConfig, type AgentDiscoveryResult, type AgentScope, discoverAgents } from "./agents.ts";
+import { awaitRecon, reconAllowed, startRecon } from "./recon.ts";
 
 const MAX_PARALLEL_TASKS = 8;
 const MAX_CONCURRENCY = 4;
@@ -289,22 +288,6 @@ async function writePromptToTempFile(agentName: string, prompt: string): Promise
 	return { dir: tmpDir, filePath };
 }
 
-function getPiInvocation(args: string[]): { command: string; args: string[] } {
-	const currentScript = process.argv[1];
-	const isBunVirtualScript = currentScript?.startsWith("/$bunfs/root/");
-	if (currentScript && !isBunVirtualScript && fs.existsSync(currentScript)) {
-		return { command: process.execPath, args: [currentScript, ...args] };
-	}
-
-	const execName = path.basename(process.execPath).toLowerCase();
-	const isGenericRuntime = /^(node|bun)(\.exe)?$/.test(execName);
-	if (!isGenericRuntime) {
-		return { command: process.execPath, args };
-	}
-
-	return { command: "pi", args };
-}
-
 type OnUpdateCallback = (partial: AgentToolResult<SubagentDetails>) => void;
 
 interface DispatchDefaults {
@@ -324,9 +307,34 @@ interface ResolvedAgent {
 	cwd: string;
 }
 
+/**
+ * Built-in read-only explorer: delegates codebase recon to a free-tier model so the
+ * paid main model keeps its context for reasoning. A user or project agent file
+ * named `explore` overrides it.
+ */
+const EXPLORE_AGENT: AgentConfig = {
+	name: "explore",
+	description: "Read-only codebase explorer: finds files, reads code, reports findings. Runs on a free model.",
+	tools: ["read", "ls", "find", "grep"],
+	systemPrompt:
+		"You are a codebase explorer. Use read, ls, find and grep to answer the task. " +
+		"Never modify files. Report concrete findings: file paths, relevant line numbers, short code excerpts. " +
+		"Keep the final answer tight — the caller pays for every token you emit.",
+	source: "user",
+	filePath: "",
+};
+
+function discoverWithBuiltins(cwd: string, scope: AgentScope): AgentDiscoveryResult {
+	const result = discoverAgents(cwd, scope);
+	if (!result.agents.some((agent) => agent.name === EXPLORE_AGENT.name)) {
+		result.agents.unshift(EXPLORE_AGENT);
+	}
+	return result;
+}
+
 function resolveAgent(defaultCwd: string, scope: AgentScope, name: string, cwd?: string): ResolvedAgent {
 	const effectiveCwd = path.resolve(defaultCwd, cwd ?? ".");
-	const discovery = discoverAgents(effectiveCwd, scope);
+	const discovery = discoverWithBuiltins(effectiveCwd, scope);
 	return {
 		agent: discovery.agents.find((candidate) => candidate.name === name),
 		available: discovery.agents,
@@ -431,7 +439,7 @@ async function runSingleAgent(
 		emitUpdate();
 		let wasAborted = false;
 		const outcome = await new Promise<ProcessOutcome>((resolve) => {
-			const invocation = getPiInvocation(args);
+			const invocation = cliInvocation(args);
 			let settled = false;
 			let exited = false;
 			let closed = false;
@@ -495,6 +503,7 @@ async function runSingleAgent(
 					cwd: effectiveCwd,
 					shell: false,
 					stdio: ["ignore", "pipe", "pipe"],
+					env: { ...process.env, MARS_NO_RECON: "1" },
 				});
 			} catch (error) {
 				finish({
@@ -602,6 +611,22 @@ const SubagentParams = Type.Object({
 });
 
 export default function (pi: ExtensionAPI) {
+	// Explore-first recon: a fresh session maps the repo on a free model in the
+	// background, and the first user turn gets the summary in its system prompt.
+	let reconPending = false;
+	pi.on("session_start", (event, ctx) => {
+		reconPending = (event.reason === "startup" || event.reason === "new") && reconAllowed(ctx);
+		if (reconPending) startRecon(ctx.cwd);
+	});
+	pi.on("before_agent_start", async (event, ctx) => {
+		if (!reconPending || event.messageType !== "user") return;
+		reconPending = false;
+		const summary = await awaitRecon(ctx).catch(() => undefined);
+		if (summary) {
+			event.systemPromptOptions.appendSystemPrompt += `\n\n## Repository recon (auto-generated)\n${summary}`;
+		}
+	});
+
 	// Tool execute results cannot set runtime error state directly, so patch it through the result hook.
 	pi.on("tool_result", (event) => {
 		if (event.toolName !== "subagent") return;
@@ -613,7 +638,8 @@ export default function (pi: ExtensionAPI) {
 		name: "subagent",
 		label: "Subagent",
 		description: [
-			"Delegate tasks to specialized subagents with isolated context.",
+			"Delegate tasks to specialized subagents with isolated context. Subagents run on a free-tier model, so delegating exploration, file reads and searches costs you no context.",
+			'Use the built-in "explore" agent for codebase recon (read/ls/find/grep).',
 			"Modes: single (agent + task), parallel (tasks array), chain (sequential with {previous} placeholder).",
 			`Default agent scope is "user" (from ${path.join(getAgentDir(), "agents")}).`,
 			`To enable project-local agents in ${CONFIG_DIR_NAME}/agents, set agentScope: "both" (or "project").`,
@@ -622,11 +648,15 @@ export default function (pi: ExtensionAPI) {
 
 		async execute(_toolCallId, params, signal, onUpdate, ctx) {
 			const agentScope: AgentScope = params.agentScope ?? "user";
+			// Delegations default to a free-tier model: the paid main model keeps its
+			// context for reasoning. An agent file's `model:` still wins.
 			const dispatchDefaults: DispatchDefaults = {
-				model: ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined,
-				thinkingLevel: ctx.thinkingLevel,
+				// Model string is `<provider>/<catalog-id>`; catalog ids are already `marsai/*`.
+				model: `marsai/${await marsFreeModel(signal)}`,
+				// Free-tier models don't reason; inheriting the main thinking level would just fail.
+				thinkingLevel: undefined,
 			};
-			const discovery = discoverAgents(ctx.cwd, agentScope);
+			const discovery = discoverWithBuiltins(ctx.cwd, agentScope);
 			const agents = discovery.agents;
 			const confirmProjectAgents = params.confirmProjectAgents ?? true;
 

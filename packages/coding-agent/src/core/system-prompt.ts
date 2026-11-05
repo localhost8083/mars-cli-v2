@@ -3,7 +3,7 @@
  */
 
 import { getSystemMessageText } from "@earendil-works/pi-ai";
-import { getDocsPath, getExamplesPath, getReadmePath } from "../config.ts";
+import { APP_NAME, getDocsPath, getExamplesPath, getReadmePath } from "../config.ts";
 import { formatSkillsForPrompt, type Skill } from "./skills.ts";
 
 export interface BuildSystemPromptOptions {
@@ -152,14 +152,13 @@ export function buildSystemPromptSections(input: BuildSystemPromptOptions): Syst
 	if (customPrompt) {
 		promptSections.preamble = customPrompt;
 	} else {
-		promptSections.preamble =
-			"You are a coding assistant running inside pi, a coding agent harness. Help users inspect files, run commands, and modify code.";
+		promptSections.preamble = `You are a coding assistant running inside ${APP_NAME}, a coding agent harness. Help users inspect files, run commands, and modify code.`;
 		const visibleTools = declaredTools.filter((name) => !!toolSnippets[name]);
 		const tools =
 			visibleTools.length > 0 ? visibleTools.map((name) => `- ${name}: ${toolSnippets[name]}`).join("\n") : "(none)";
 		promptSections.tools = `${tools}\n\nAdditional tools may be available.`;
 		promptSections.rules = buildRules(declaredTools, toolGuidelines, promptGuidelines);
-		promptSections.docs = `Pi documentation (read only when the user asks about the harness itself, its SDK, extensions, themes, skills, or TUI):
+		promptSections.docs = `${APP_NAME} documentation (read only when the user asks about the harness itself, its SDK, extensions, themes, skills, or TUI):
 - Main documentation: ${getReadmePath()}
 - Additional docs: ${getDocsPath()}
 - Examples: ${getExamplesPath()} (extensions, custom tools, SDK)

@@ -6,8 +6,7 @@ import {
 	TuiMainScreen,
 } from "@earendil-works/pi-tui";
 import { existsSync } from "fs";
-import { APP_NAME, CONFIG_DIR_NAME, ENV_AGENT_DIR, getAgentDir, getSettingsPath, PACKAGE_NAME } from "../config.ts";
-import { areExperimentalFeaturesEnabled } from "../core/experimental.ts";
+import { ENV_AGENT_DIR, getAgentDir, getSettingsPath } from "../config.ts";
 import { KeybindingsManager } from "../core/keybindings.ts";
 import { DefaultPackageManager, type ResolvedResource } from "../core/package-manager.ts";
 import { SettingsManager } from "../core/settings-manager.ts";
@@ -31,24 +30,7 @@ import {
 } from "../modes/interactive/theme/theme.ts";
 import { requestTerminalColors } from "../modes/interactive/theme/theme-controller.ts";
 
-const OFFICIAL_PACKAGE_NAME = "@earendil-works/pi-coding-agent";
-const OFFICIAL_APP_NAME = "pi";
-const OFFICIAL_CONFIG_DIR_NAME = ".pi";
-
-interface DistributionMetadata {
-	packageName: string;
-	appName: string;
-	configDirName: string;
-}
-
-function isOfficialDistribution({ packageName, appName, configDirName }: DistributionMetadata): boolean {
-	return (
-		packageName === OFFICIAL_PACKAGE_NAME &&
-		appName === OFFICIAL_APP_NAME &&
-		configDirName === OFFICIAL_CONFIG_DIR_NAME
-	);
-}
-
+/** First-time setup dialog host (theme + analytics on first run). */
 function loadThemes(resources: ResolvedResource[]): Theme[] {
 	const themes: Theme[] = [];
 	const seen = new Set<string>();
@@ -123,24 +105,12 @@ async function clearStartupTui(ui: TUI): Promise<void> {
 
 /**
  * First-time setup runs when all of these hold:
- * - this is the official Pi distribution (not a fork/rebrand)
- * - experimental features are enabled (PI_EXPERIMENTAL=1)
- * - the default agent directory is used (no custom agent dir override)
+ * - no custom agent dir override is active
  * - setup was not completed before (settings.json does not exist)
+ * (The upstream "official Pi distribution" and PI_EXPERIMENTAL gates do not apply:
+ * this fork IS the official marscli distribution.)
  */
 export function shouldRunFirstTimeSetup(settingsPath: string = getSettingsPath()): boolean {
-	if (
-		!isOfficialDistribution({
-			packageName: PACKAGE_NAME,
-			appName: APP_NAME,
-			configDirName: CONFIG_DIR_NAME,
-		})
-	) {
-		return false;
-	}
-	if (!areExperimentalFeaturesEnabled()) {
-		return false;
-	}
 	if (process.env[ENV_AGENT_DIR]) {
 		return false;
 	}

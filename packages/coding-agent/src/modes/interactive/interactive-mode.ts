@@ -117,19 +117,19 @@ import {
 import type { FullscreenExitOutput, TuiMode } from "../../core/settings-manager.ts";
 import { BUILTIN_SLASH_COMMANDS } from "../../core/slash-commands.ts";
 import { getSourcePackageKey, type SourceInfo } from "../../core/source-info.ts";
-import { isInstallTelemetryEnabled } from "../../core/telemetry.ts";
 import { withBuiltInRenderers } from "../../core/tools/renderers/index.ts";
 import type { TruncationResult } from "../../core/tools/truncate.ts";
 import { hasTrustRequiringProjectResources, ProjectTrustStore } from "../../core/trust-manager.ts";
 import { getUsageCostBreakdown } from "../../core/usage-totals.ts";
+import { marsFreeModel } from "../../extensions/marsai/index.ts";
 import { addMcpServerConfig, loadMcpConfig } from "../../extensions/mcp/config.ts";
 import { getChangelogPath, getNewEntries, normalizeChangelogLinks, parseChangelog } from "../../utils/changelog.ts";
+import { cliInvocation } from "../../utils/cli-invocation.ts";
 import { copyToClipboard, readClipboardFilePaths, readClipboardText } from "../../utils/clipboard.ts";
 import { extensionForImageMimeType, readClipboardImage } from "../../utils/clipboard-image.ts";
 import { parseGitUrl } from "../../utils/git.ts";
 import { ensurePngTranscoder } from "../../utils/image-convert.ts";
 import { getCwdRelativePath, shortenHomePath } from "../../utils/paths.ts";
-import { getPiUserAgent } from "../../utils/pi-user-agent.ts";
 import { killTrackedDetachedChildren } from "../../utils/shell.ts";
 import { loadAllHighlightLanguages } from "../../utils/syntax-highlight.ts";
 import { stripBom } from "../../utils/text.ts";
@@ -151,6 +151,7 @@ import { playArmin3d, playPiLogo3d } from "./components/easter-egg-3d.lazy.ts";
 import { ExtensionEditorComponent } from "./components/extension-editor.ts";
 import { ExtensionInputComponent } from "./components/extension-input.ts";
 import { ExtensionSelectorComponent } from "./components/extension-selector.ts";
+import { MARS_LOGO_LINES } from "./components/first-time-setup.ts";
 import { FooterComponent, formatTokens } from "./components/footer.ts";
 import { formatKeyText, keyDisplayText, keyHint, keyText, rawKeyHint } from "./components/keybinding-hints.ts";
 import { LoginDialogComponent } from "./components/login-dialog.ts";
@@ -496,6 +497,20 @@ export class InteractiveMode {
 	private workingVisible = true;
 	private workingIndicatorOptions: WorkingIndicatorOptions | undefined = undefined;
 	private readonly defaultWorkingMessage = "Working";
+
+	/** Rotating feature tips shown under the working indicator. */
+	private readonly workingTips = [
+		"?question asks the free model without touching the transcript",
+		"/budget switches this session to free-tier models · /budget off restores",
+		"/ghost replays your last prompt on the free model to compare answers",
+		"/handoff exports the session so a teammate can resume it elsewhere",
+		"/update checks for a new marscli version",
+		"!command runs bash and feeds the output into context · !! runs silently",
+		`subagents run on free-tier models — drop an explore.md in ${CONFIG_DIR_NAME}/agents`,
+		"/compact summarizes the conversation when context runs low",
+		"drop files into the terminal to attach them to your next message",
+		"/export writes the session as HTML or JSONL",
+	];
 	private readonly defaultHiddenThinkingLabel = "Thinking...";
 	private hiddenThinkingLabel = this.defaultHiddenThinkingLabel;
 
@@ -1081,12 +1096,25 @@ export class InteractiveMode {
 			const compactOnboarding = () =>
 				theme.fg(
 					"dim",
-					`Press ${keyText("app.tools.expand")} to show full startup help${showDetails ? " and loaded resources" : ""}.`,
+					showDetails
+						? `Press ${keyText("app.tools.expand")} to show full startup help and loaded resources.`
+						: "Type /hotkeys for shortcuts.",
 				);
 			const onboarding = () =>
-				theme.fg("dim", `Pi can explain its own features and look up its docs. Ask it how to use or extend Pi.`);
+				theme.fg(
+					"dim",
+					`${APP_NAME} can explain its own features and look up its docs. Ask it how to use or extend ${APP_NAME}.`,
+				);
+			// Big block MARS wordmark: the 3-px half-block M reads as blobs at small
+			// font sizes, so the quiet header gets the same ASCII art as first-run setup.
+			const bigMark = () =>
+				`${theme.fg("accent", MARS_LOGO_LINES.join("\n"))}\n` +
+				`${theme.fg("dim", `v${this.version}`)}  ${compactInstructions()}`;
 			const header = new BuiltInHeader(
-				() => `${withLogo(compactInstructions())}\n${compactOnboarding()}\n\n${onboarding()}`,
+				() =>
+					showDetails
+						? `${withLogo(compactInstructions())}\n${compactOnboarding()}\n\n${onboarding()}`
+						: `${bigMark()}\n${compactOnboarding()}`,
 				() => `${withLogo(expandedInstructions())}\n\n${onboarding()}`,
 				this.getStartupExpansionState(),
 				1,
@@ -1238,7 +1266,18 @@ export class InteractiveMode {
 			this.showError(`models.json error: ${modelsJsonError}`);
 		}
 
-		if (modelFallbackMessage) {
+		// MarsAI is the only provider, so a fresh install with no credential and no
+		// initial prompt goes straight into its OAuth device flow: the login dialog
+		// opens the browser itself once the code arrives. The "no models" warning is
+		// redundant on that path — the login is the fix.
+		const autoLoginMars =
+			!process.env.PI_OFFLINE &&
+			!initialMessage &&
+			!initialMessages?.length &&
+			!this.session.modelRuntime.getProviderAuthStatus("marsai").configured &&
+			this.getLoginProviderOptions("oauth").some((p) => p.id === "marsai");
+
+		if (modelFallbackMessage && !autoLoginMars) {
 			this.showWarning(modelFallbackMessage);
 		}
 
@@ -1251,6 +1290,10 @@ export class InteractiveMode {
 		}
 
 		void this.maybeWarnAboutAnthropicSubscriptionAuth();
+
+		if (autoLoginMars) {
+			await this.showLoginDialog("marsai", "MarsAI");
+		}
 
 		// Process initial messages
 		if (initialMessage) {
@@ -1365,9 +1408,8 @@ export class InteractiveMode {
 		const entries = parseChangelog(changelogPath);
 
 		if (!lastVersion) {
-			// Fresh install - record the version, send telemetry, don't show changelog
+			// Fresh install - record the version, don't show changelog
 			this.settingsManager.setLastChangelogVersion(VERSION);
-			this.reportInstallTelemetry(VERSION);
 			return undefined;
 		}
 
@@ -1379,7 +1421,6 @@ export class InteractiveMode {
 		}
 		if (newEntries.length > 0) {
 			this.settingsManager.setLastChangelogVersion(VERSION);
-			this.reportInstallTelemetry(VERSION);
 			return newEntries.map((e) => normalizeChangelogLinks(e.content, e)).join("\n\n");
 		}
 
@@ -1451,25 +1492,6 @@ export class InteractiveMode {
 		} catch {
 			return undefined;
 		}
-	}
-
-	private reportInstallTelemetry(version: string): void {
-		if (process.env.PI_OFFLINE) {
-			return;
-		}
-
-		if (!isInstallTelemetryEnabled(this.settingsManager)) {
-			return;
-		}
-
-		void fetch(`https://pi.dev/api/report-install?version=${encodeURIComponent(version)}`, {
-			headers: {
-				"User-Agent": getPiUserAgent(version),
-			},
-			signal: AbortSignal.timeout(5000),
-		})
-			.then(() => undefined)
-			.catch(() => undefined);
 	}
 
 	private getMarkdownThemeWithSettings(): MarkdownTheme {
@@ -2477,6 +2499,7 @@ export class InteractiveMode {
 				this.workingMessage ?? this.defaultWorkingMessage,
 				this.workingIndicatorOptions,
 				colorFn,
+				this.workingMessage ? undefined : this.workingTips,
 			),
 		);
 	}
@@ -3295,6 +3318,11 @@ export class InteractiveMode {
 				await this.showModelsSelector();
 				return;
 			}
+			if (text === "/budget" || text === "/budget off") {
+				this.editor.setText("");
+				await this.handleBudgetCommand(text.endsWith("off"));
+				return;
+			}
 			if (text === "/model" || text.startsWith("/model ")) {
 				const searchTerm = text.startsWith("/model ") ? text.slice(7).trim() : undefined;
 				this.editor.setText("");
@@ -3315,6 +3343,21 @@ export class InteractiveMode {
 			if (text === "/import" || text.startsWith("/import ")) {
 				await this.handleImportCommand(text);
 				this.editor.setText("");
+				return;
+			}
+			if (text === "/handoff" || text.startsWith("/handoff ")) {
+				await this.handleHandoffCommand(text);
+				this.editor.setText("");
+				return;
+			}
+			if (text === "/ghost") {
+				this.editor.setText("");
+				void this.handleGhostCommand();
+				return;
+			}
+			if (text === "/update") {
+				this.editor.setText("");
+				void this.handleUpdateCommand();
 				return;
 			}
 			if (text === "/share") {
@@ -3424,6 +3467,23 @@ export class InteractiveMode {
 				this.editor.setText("");
 				await this.shutdown();
 				return;
+			}
+
+			// Inline ask: "?question" hits a free-tier model directly and prints the
+			// answer in chat without touching the main session's context. "??" is the
+			// escape: "??text" goes to the main model as "text".
+			if (text.startsWith("?") && !text.startsWith("??")) {
+				const question = text.slice(1).trim();
+				if (question) {
+					this.editor.addToHistory?.(text);
+					this.editor.setText("");
+					void this.handleInlineAsk(question);
+					return;
+				}
+			}
+			if (text.startsWith("??") && text.slice(2).trim()) {
+				this.editor.addToHistory?.(text);
+				this.editor.setText(text.slice(1).trimStart());
 			}
 
 			// Handle bash command (! for normal, !! for excluded from context)
@@ -4768,7 +4828,7 @@ export class InteractiveMode {
 		const updateInstruction = () =>
 			theme.fg("muted", `New version ${release.version} is available. Run `) +
 			theme.fg("accent", `${APP_NAME} update`);
-		const changelogUrl = "https://pi.dev/changelog";
+		const changelogUrl = "https://www.npmjs.com/package/@mars_ai/marscli";
 		const changelogLine = () => {
 			const changelogLink = getCapabilities().hyperlinks
 				? hyperlink(theme.fg("accent", changelogUrl), changelogUrl)
@@ -5323,6 +5383,171 @@ export class InteractiveMode {
 			);
 			return { component: selector, focus: selector };
 		});
+	}
+
+	/** Model before /budget swapped it, so `/budget off` can restore it. */
+	private budgetPreviousModel: Model<any> | undefined;
+
+	private async handleBudgetCommand(restore: boolean): Promise<void> {
+		if (restore) {
+			if (!this.budgetPreviousModel) {
+				this.showStatus("Budget mode is not active");
+				return;
+			}
+			const previous = this.budgetPreviousModel;
+			this.budgetPreviousModel = undefined;
+			await this.session.setModel(previous, { persist: false });
+			this.footer.invalidate();
+			this.showStatus(`Budget mode off. Model: ${previous.id}`);
+			return;
+		}
+		try {
+			const freeId = await marsFreeModel();
+			const model = await this.findExactModelMatch(`marsai/${freeId}`);
+			if (!model) {
+				this.showError(`Free-tier model ${freeId} is not available yet; try /model to pick one.`);
+				return;
+			}
+			if (this.session.model?.id !== model.id) this.budgetPreviousModel = this.session.model;
+			await this.session.setModel(model, { persist: false });
+			this.footer.invalidate();
+			this.updateEditorBorderColor();
+			this.showStatus(`Budget mode: ${model.id} (free tier, session only). /budget off restores.`);
+		} catch (error) {
+			this.showError(error instanceof Error ? error.message : String(error));
+		}
+	}
+
+	/**
+	 * `/ghost` replays the last user prompt on the free-tier model as a throwaway
+	 * child, then prints the answer in chat: same question, cheap seat. Nothing is
+	 * appended to the session.
+	 */
+	private async handleGhostCommand(): Promise<void> {
+		const messages = this.session.state.messages;
+		const lastUser = [...messages].reverse().find((m) => m.role === "user");
+		const prompt = (
+			typeof lastUser?.content === "string"
+				? lastUser.content
+				: (lastUser?.content ?? [])
+						.filter((part) => part.type === "text")
+						.map((part) => part.text)
+						.join("\n")
+		).trim();
+		if (!prompt) {
+			this.showStatus("Nothing to replay yet");
+			return;
+		}
+		if (this.freeChildBusy) {
+			this.showStatus("A `?` or /ghost question is already running");
+			return;
+		}
+		this.freeChildBusy = true;
+		try {
+			const freeId = await marsFreeModel();
+			this.showStatus(`ghost: replaying on ${freeId}…`);
+			const wrapped = `Answer this request directly and concisely, as if you had full project context. Do not ask clarifying questions.\n\n${prompt}`;
+			const answer = await this.runFreeChild([wrapped], { tools: "", timeoutMs: 90_000 });
+			const shown = answer.length > 4_000 ? `${answer.slice(0, 4_000)}\n[truncated]` : answer;
+			this.chatContainer.addChild(new Spacer(1));
+			this.chatContainer.addChild(
+				new Text(`${theme.fg("accent", `ghost · ${freeId}`)}\n${theme.fg("dim", shown || "(no answer)")}`, 1, 0),
+			);
+			this.ui.requestRender();
+		} catch (error) {
+			this.showError(`Ghost failed: ${error instanceof Error ? error.message : String(error)}`);
+		} finally {
+			this.freeChildBusy = false;
+		}
+	}
+
+	/** One free-tier child at a time: `?` and `/ghost` share this runner. */
+	private freeChildBusy = false;
+
+	/**
+	 * Spawn a throwaway `mars -p` child on a free-tier model and return its last
+	 * assistant text. The prompt travels on stdin (argv hits the Windows ~32k
+	 * command-line limit on long /ghost prompts); never touches the session.
+	 */
+	private async runFreeChild(promptParts: string[], options: { tools?: string; timeoutMs?: number }): Promise<string> {
+		const freeId = await marsFreeModel();
+		const args = ["--mode", "json", "-p", "--no-session", "--model", `marsai/${freeId}`];
+		if (options.tools !== undefined) args.push("--tools", options.tools);
+		const invocation = cliInvocation(args);
+		const proc = spawn(invocation.command, invocation.args, {
+			cwd: this.sessionManager.getCwd(),
+			shell: false,
+			stdio: ["pipe", "pipe", "ignore"],
+			env: { ...process.env, MARS_NO_RECON: "1" },
+		});
+		proc.stdin?.end(promptParts.join("\n"));
+		let lastText = "";
+		return await new Promise<string>((resolve) => {
+			let settled = false;
+			const finish = (text: string) => {
+				if (settled) return;
+				settled = true;
+				clearTimeout(timer);
+				clearTimeout(escalation);
+				resolve(text);
+			};
+			const limit = options.timeoutMs ?? 60_000;
+			const timer = setTimeout(() => {
+				if (proc.exitCode === null && proc.signalCode === null) proc.kill("SIGTERM");
+			}, limit);
+			// SIGTERM can be ignored by a wedged child; escalate once after a grace period.
+			const escalation = setTimeout(() => {
+				if (proc.exitCode === null && proc.signalCode === null) proc.kill("SIGKILL");
+			}, limit + 5_000);
+			let buffer = "";
+			proc.stdout?.on("data", (data: Buffer) => {
+				buffer += data.toString();
+				const lines = buffer.split("\n");
+				buffer = lines.pop() || "";
+				for (const line of lines) {
+					if (!line.trim()) continue;
+					try {
+						const event = JSON.parse(line) as { type?: string; message?: Message };
+						if (event.type === "message_end" && event.message?.role === "assistant") {
+							for (const part of event.message.content) {
+								if (part.type === "text") lastText = part.text;
+							}
+						}
+					} catch {
+						// Non-JSON noise; skip.
+					}
+				}
+			});
+			proc.on("close", () => finish(lastText));
+			proc.on("error", () => finish(""));
+		});
+	}
+
+	/**
+	 * `?question` asks a free-tier model directly: the answer lands in chat as a dim
+	 * line and nothing enters the session transcript.
+	 */
+	private async handleInlineAsk(question: string): Promise<void> {
+		if (this.freeChildBusy) {
+			this.showStatus("A `?` or /ghost question is already running");
+			return;
+		}
+		this.freeChildBusy = true;
+		try {
+			const freeId = await marsFreeModel();
+			this.showStatus(`asking ${freeId}: ${question.length > 60 ? `${question.slice(0, 60)}...` : question}`);
+			const answer = await this.runFreeChild([question], { tools: "", timeoutMs: 60_000 });
+			const shown = answer.length > 4_000 ? `${answer.slice(0, 4_000)}\n[truncated]` : answer;
+			this.chatContainer.addChild(new Spacer(1));
+			this.chatContainer.addChild(
+				new Text(`${theme.fg("accent", "? ")}${theme.fg("dim", shown || "(no answer)")}`, 1, 0),
+			);
+			this.ui.requestRender();
+		} catch (error) {
+			this.showError(error instanceof Error ? error.message : String(error));
+		} finally {
+			this.freeChildBusy = false;
+		}
 	}
 
 	private async handleModelCommand(searchTerm?: string): Promise<void> {
@@ -6228,10 +6453,10 @@ export class InteractiveMode {
 					selectionError = `${actionLabel}, but no models are available for that provider. Use /model to select a model.`;
 				} else {
 					const defaultModelId = defaultModelPerProvider[providerId];
-					// Radius catalogs vary by account; prefer balanced, then use catalog order.
+					// Radius and MarsAI catalogs vary by account/server; prefer the default, then catalog order.
 					selectedModel =
 						providerModels.find((model) => model.id === defaultModelId) ??
-						(providerId === "radius" ? providerModels[0] : undefined);
+						(providerId === "radius" || providerId === "marsai" ? providerModels[0] : undefined);
 					if (!selectedModel) {
 						selectionError = `${actionLabel}, but its default model "${defaultModelId}" is not available. Use /model to select a model.`;
 					} else {
@@ -6669,7 +6894,95 @@ export class InteractiveMode {
 		}
 	}
 
-	private getPathCommandArgument(text: string, command: "/export" | "/import"): string | undefined {
+	/**
+	 * `/update` runs `mars update` as a child process so the TUI survives whatever
+	 * npm does to the binary on disk. Async on purpose: blocking the TUI thread for
+	 * minutes freezes the renderer, and a hard timeout could kill npm mid-install.
+	 */
+	private updateRunning = false;
+
+	private async handleUpdateCommand(): Promise<void> {
+		if (this.updateRunning) {
+			this.showStatus("An update is already running");
+			return;
+		}
+		this.updateRunning = true;
+		this.showStatus("Checking for updates…");
+		const invocation = cliInvocation(["update"]);
+		const output = await new Promise<string>((resolve) => {
+			let collected = "";
+			let child: ReturnType<typeof spawn>;
+			try {
+				child = spawn(invocation.command, invocation.args, {
+					cwd: this.sessionManager.getCwd(),
+					shell: false,
+					windowsHide: true,
+					stdio: ["ignore", "pipe", "pipe"],
+				});
+			} catch (error) {
+				resolve(`Update failed to start: ${error instanceof Error ? error.message : String(error)}`);
+				return;
+			}
+			const collect = (data: Buffer) => {
+				if (collected.length < 20_000) collected += data.toString();
+			};
+			child.stdout?.on("data", collect);
+			child.stderr?.on("data", collect);
+			child.on("error", (error) => resolve(`Update failed: ${error.message}`));
+			child.on("close", (code) => {
+				resolve(
+					collected.trim() || (code === 0 ? "Already up to date." : `Update exited with code ${code ?? "signal"}`),
+				);
+			});
+		});
+		this.updateRunning = false;
+		this.chatContainer.addChild(new Spacer(1));
+		this.chatContainer.addChild(new Text(theme.fg("dim", output), 1, 0));
+		this.ui.requestRender();
+	}
+
+	/**
+	 * Package the session for another machine: JSONL next to the project, plus the
+	 * exact `mars` commands to resume there. The grant is machine-bound but the
+	 * session file is not, so the teammate just imports it.
+	 */
+	private async handleHandoffCommand(text: string): Promise<void> {
+		let outputPath = this.getPathCommandArgument(text, "/handoff");
+		if (!outputPath) {
+			outputPath = path.join(
+				this.sessionManager.getCwd(),
+				`mars-handoff-${this.sessionManager.getSessionId().slice(0, 8)}.jsonl`,
+			);
+		} else if (!outputPath.endsWith(".jsonl")) {
+			outputPath = `${outputPath}.jsonl`;
+		}
+		try {
+			const filePath = this.session.exportToJsonl(outputPath);
+			const cwd = this.sessionManager.getCwd();
+			this.showStatus(`Session exported: ${filePath}`);
+			this.chatContainer.addChild(new Spacer(1));
+			this.chatContainer.addChild(
+				new Text(
+					[
+						theme.fg("accent", "Hand off this session:"),
+						theme.fg(
+							"dim",
+							`  1. Send ${path.basename(filePath)} (it contains the full transcript — check for secrets first)`,
+						),
+						theme.fg("dim", `  2. On the other machine: cd into a copy of this project (${cwd})`),
+						theme.fg("dim", `  3. Run ${APP_NAME}, then: /import "${path.basename(filePath)}"`),
+					].join("\n"),
+					1,
+					0,
+				),
+			);
+			this.ui.requestRender();
+		} catch (error: unknown) {
+			this.showError(`Failed to export session: ${error instanceof Error ? error.message : "Unknown error"}`);
+		}
+	}
+
+	private getPathCommandArgument(text: string, command: "/export" | "/import" | "/handoff"): string | undefined {
 		if (text === command) {
 			return undefined;
 		}
@@ -6686,7 +6999,8 @@ export class InteractiveMode {
 		if (firstChar === '"' || firstChar === "'") {
 			const closingQuoteIndex = argsString.indexOf(firstChar, 1);
 			if (closingQuoteIndex < 0) {
-				return undefined;
+				// An unterminated quote would silently export somewhere the user never asked.
+				throw new Error(`Unterminated quote in path: ${argsString}`);
 			}
 			return argsString.slice(1, closingQuoteIndex);
 		}

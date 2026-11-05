@@ -368,7 +368,7 @@ export function getSelfUpdateUnavailableInstruction(
 	const method = detectInstallMethod();
 	const target = normalizeSelfUpdatePackageTarget(updatePackageTarget);
 	if (method === "bun-binary") {
-		return `Download from: https://github.com/earendil-works/pi/releases/latest`;
+		return `Download from: https://www.npmjs.com/package/@mars_ai/marscli`;
 	}
 	const command = getSelfUpdateCommandForMethod(method, packageName, target, npmCommand);
 	// Path-based detection also matches installs that only live under a package manager's directory,
@@ -569,9 +569,8 @@ export function detectInstallChange(packageJsonPath = startupPackageJsonPath): I
 	} catch (error) {
 		return (error as NodeJS.ErrnoException).code === "ENOENT" ? { kind: "removed" } : undefined;
 	}
-	return installed.version && installed.version !== VERSION
-		? { kind: "updated", version: installed.version }
-		: undefined;
+	const installedVersion = installed.piConfig?.version || installed.version;
+	return installedVersion && installedVersion !== VERSION ? { kind: "updated", version: installedVersion } : undefined;
 }
 
 // =============================================================================
@@ -584,6 +583,7 @@ interface PackageJson {
 	piConfig?: {
 		name?: string;
 		configDir?: string;
+		version?: string;
 	};
 }
 
@@ -604,7 +604,9 @@ export const PACKAGE_NAME: string = pkg.name || "@earendil-works/pi-coding-agent
 export const APP_NAME: string = piConfigName || "pi";
 export const APP_TITLE: string = piConfigName ? APP_NAME : "π";
 export const CONFIG_DIR_NAME: string = pkg.piConfig?.configDir || ".pi";
-export const VERSION: string = pkg.version || "0.0.0";
+// piConfig.version overrides the package version: marscli's release line tracks
+// @mars_ai/marscli on npm, which shares no version space with this fork's package.
+export const VERSION: string = pkg.piConfig?.version || pkg.version || "0.0.0";
 
 // e.g., PI_CODING_AGENT_DIR or TAU_CODING_AGENT_DIR
 export const ENV_AGENT_DIR = `${APP_NAME.toUpperCase()}_CODING_AGENT_DIR`;
@@ -614,7 +616,7 @@ export function expandTildePath(path: string): string {
 	return normalizePath(path);
 }
 
-const DEFAULT_SHARE_VIEWER_URL = "https://pi.dev/session/";
+const DEFAULT_SHARE_VIEWER_URL = "https://marsai.click/session/";
 
 /** Get the share viewer URL for a gist ID. */
 export function getShareViewerUrl(gistId: string): string {

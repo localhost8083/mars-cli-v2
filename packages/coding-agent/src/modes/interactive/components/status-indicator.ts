@@ -36,7 +36,15 @@ export class StatusIndicator extends Loader {
 }
 
 export class WorkingStatusIndicator extends StatusIndicator {
-	constructor(ui: TUI, message: string, indicator?: WorkingIndicatorOptions, colorFn?: (text: string) => string) {
+	private tipInterval: ReturnType<typeof setInterval> | undefined;
+
+	constructor(
+		ui: TUI,
+		message: string,
+		indicator?: WorkingIndicatorOptions,
+		colorFn?: (text: string) => string,
+		tips?: string[],
+	) {
 		super(
 			"working",
 			ui,
@@ -45,6 +53,26 @@ export class WorkingStatusIndicator extends StatusIndicator {
 			message,
 			indicator,
 		);
+		// Cycle a random marscli tip under the working message, like Claude Code's
+		// "tip of the turn". Each tick swaps the whole message line.
+		if (tips && tips.length > 0) {
+			let lastTip = -1;
+			this.tipInterval = setInterval(() => {
+				let next = Math.floor(Math.random() * tips.length);
+				if (tips.length > 1 && next === lastTip) next = (next + 1) % tips.length;
+				lastTip = next;
+				this.setMessage(`${message} · tip: ${tips[next]}`);
+				ui.requestRender();
+			}, 4_000);
+		}
+	}
+
+	override dispose(): void {
+		if (this.tipInterval) {
+			clearInterval(this.tipInterval);
+			this.tipInterval = undefined;
+		}
+		super.dispose();
 	}
 }
 

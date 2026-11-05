@@ -1,10 +1,10 @@
-# Subagent Example
+# Subagent (built-in extension)
 
 Delegate tasks to specialized subagents with isolated context windows.
 
 ## Features
 
-- **Isolated context**: Each subagent runs in a separate `pi` process
+- **Isolated context**: Each subagent runs in a separate `mars` process
 - **Streaming output**: See tool calls and progress as they happen
 - **Parallel streaming**: All parallel tasks stream updates simultaneously
 - **Markdown rendering**: Final output rendered with proper formatting (expanded view)
@@ -31,38 +31,33 @@ subagent/
 
 ## Installation
 
-From the repository root, symlink the files:
+The extension itself ships built in; only the sample agents and workflow prompts need copying:
 
 ```bash
-# Symlink the extension (must be in a subdirectory with index.ts)
-mkdir -p ~/.pi/agent/extensions/subagent
-ln -sf "$(pwd)/packages/coding-agent/examples/extensions/subagent/index.ts" ~/.pi/agent/extensions/subagent/index.ts
-ln -sf "$(pwd)/packages/coding-agent/examples/extensions/subagent/agents.ts" ~/.pi/agent/extensions/subagent/agents.ts
-
-# Symlink agents
-mkdir -p ~/.pi/agent/agents
-for f in packages/coding-agent/examples/extensions/subagent/agents/*.md; do
-  ln -sf "$(pwd)/$f" ~/.pi/agent/agents/$(basename "$f")
+# Sample agents
+mkdir -p ~/.mars/agent/agents
+for f in packages/coding-agent/src/extensions/subagent/agents/*.md; do
+  cp "$f" ~/.mars/agent/agents/$(basename "$f")
 done
 
-# Symlink workflow prompts
-mkdir -p ~/.pi/agent/prompts
-for f in packages/coding-agent/examples/extensions/subagent/prompts/*.md; do
-  ln -sf "$(pwd)/$f" ~/.pi/agent/prompts/$(basename "$f")
+# Workflow prompts
+mkdir -p ~/.mars/agent/prompts
+for f in packages/coding-agent/src/extensions/subagent/prompts/*.md; do
+  cp "$f" ~/.mars/agent/prompts/$(basename "$f")
 done
 ```
 
 ## Security Model
 
-This tool executes a separate `pi` subprocess with a delegated system prompt and tool/model configuration.
+This tool executes a separate `mars` subprocess with a delegated system prompt and tool/model configuration.
 
-**Project-local agents** (`.pi/agents/*.md`) are repo-controlled prompts that can instruct the model to read files, run bash commands, etc.
+**Project-local agents** (`.mars/agents/*.md`) are repo-controlled prompts that can instruct the model to read files, run bash commands, etc.
 
-**Default behavior:** Only loads **user-level agents** from `~/.pi/agent/agents`.
+**Default behavior:** Only loads **user-level agents** from `~/.mars/agent/agents`.
 
 To enable project-local agents, pass `agentScope: "both"` (or `"project"`). Only do this for repositories you trust.
 
-When running interactively, the tool prompts for confirmation before running project-local agents unless the session trust context reports trusted and the agents come from that session project's `.pi/agents` directory. Agents loaded from another task `cwd` still require confirmation. Set `confirmProjectAgents: false` to disable confirmation.
+When running interactively, the tool prompts for confirmation before running project-local agents unless the session trust context reports trusted and the agents come from that session project's `.mars/agents` directory. Agents loaded from another task `cwd` still require confirmation. Set `confirmProjectAgents: false` to disable confirmation.
 
 ## Usage
 
@@ -140,8 +135,8 @@ System prompt for the agent goes here.
 When `model` is omitted, the subagent inherits the dispatching session's active model and thinking level.
 
 **Locations:**
-- `~/.pi/agent/agents/*.md` - User-level (with `agentScope: "user"` or `"both"`)
-- `.pi/agents/*.md` - Project-level (only with `agentScope: "project"` or `"both"`)
+- `~/.mars/agent/agents/*.md` - User-level (with `agentScope: "user"` or `"both"`)
+- `.mars/agents/*.md` - Project-level (only with `agentScope: "project"` or `"both"`)
 
 Project agents override user agents with the same name when `agentScope: "both"`.
 

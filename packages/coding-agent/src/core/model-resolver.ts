@@ -16,8 +16,10 @@ import { isValidThinkingLevel } from "../cli/args.ts";
 import { DEFAULT_THINKING_LEVEL } from "./defaults.ts";
 import type { ModelRuntime } from "./model-runtime.ts";
 
-/** Default chat model IDs for providers with built-in chat models. */
-export const defaultModelPerProvider: Partial<Record<KnownProvider, string>> = {
+/** Default chat model IDs for providers with built-in or extension chat models.
+ * MarsAI is the only runtime provider; other entries are retained because the
+ * generated catalogs and their tests still reference them. */
+export const defaultModelPerProvider: Partial<Record<KnownProvider | "marsai", string>> = {
 	"amazon-bedrock": "us.anthropic.claude-opus-5-5",
 	"ant-ling": "Ring-2.6-1T",
 	anthropic: "claude-opus-5-5",
@@ -60,6 +62,7 @@ export const defaultModelPerProvider: Partial<Record<KnownProvider, string>> = {
 	"xiaomi-token-plan-cn": "mimo-v2.6-pro",
 	"xiaomi-token-plan-ams": "mimo-v2.6-pro",
 	"xiaomi-token-plan-sgp": "mimo-v2.6-pro",
+	marsai: "marsai/auto-free",
 };
 
 export interface ScopedModel {

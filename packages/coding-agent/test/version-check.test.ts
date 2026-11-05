@@ -42,13 +42,13 @@ describe("version checks", () => {
 		await expect(checkForNewPiVersion("1.2.2")).resolves.toEqual({ version: "1.2.3" });
 	});
 
-	it("uses the pi.dev version check api with a pi user agent", async () => {
-		const fetchMock = vi.fn(async () => Response.json({ version: "1.2.4" }));
+	it("uses the npm registry with a marscli user agent", async () => {
+		const fetchMock = vi.fn(async () => Response.json({ name: "@mars_ai/marscli", version: "1.2.4" }));
 		vi.stubGlobal("fetch", fetchMock);
 
 		await expect(getLatestPiVersion("1.2.3")).resolves.toBe("1.2.4");
 		expect(fetchMock).toHaveBeenCalledWith(
-			"https://pi.dev/api/latest-version",
+			"https://registry.npmjs.org/@mars_ai/marscli/latest",
 			expect.objectContaining({
 				headers: expect.objectContaining({
 					"User-Agent": expect.stringMatching(/^pi\/1\.2\.3 /),

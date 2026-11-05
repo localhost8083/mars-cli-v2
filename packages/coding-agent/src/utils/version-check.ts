@@ -2,7 +2,8 @@ import { compare, valid } from "semver";
 import { fetchWithRetry } from "./management-http.ts";
 import { getPiUserAgent } from "./pi-user-agent.ts";
 
-const LATEST_VERSION_URL = "https://pi.dev/api/latest-version";
+// MARS CLI ships via npm; the registry is the version source of truth.
+const LATEST_VERSION_URL = "https://registry.npmjs.org/@mars_ai/marscli/latest";
 const DEFAULT_VERSION_CHECK_TIMEOUT_MS = 10000;
 
 export interface LatestPiRelease {
@@ -70,6 +71,9 @@ export async function getLatestPiRelease(
 	if (!response.ok) return undefined;
 
 	const data = (await response.json()) as {
+		// npm registry package doc shape; `note` is unused upstream but kept for a
+		// future MarsAI-hosted endpoint that could ship release notes.
+		name?: unknown;
 		packageName?: unknown;
 		version?: unknown;
 		note?: unknown;
@@ -77,8 +81,8 @@ export async function getLatestPiRelease(
 	if (typeof data.version !== "string" || !data.version.trim()) {
 		return undefined;
 	}
-	const packageName =
-		typeof data.packageName === "string" && data.packageName.trim() ? data.packageName.trim() : undefined;
+	const rawName = data.packageName ?? data.name;
+	const packageName = typeof rawName === "string" && rawName.trim() ? rawName.trim() : undefined;
 	const note = typeof data.note === "string" && data.note.trim() ? data.note.trim() : undefined;
 	return {
 		version: data.version.trim(),

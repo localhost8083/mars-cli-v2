@@ -4,7 +4,8 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { CONFIG_DIR_NAME, getAgentDir, parseFrontmatter } from "@earendil-works/pi-coding-agent";
+import { CONFIG_DIR_NAME, getAgentDir } from "../../config.ts";
+import { parseFrontmatter } from "../../utils/frontmatter.ts";
 
 export type AgentScope = "user" | "project" | "both";
 

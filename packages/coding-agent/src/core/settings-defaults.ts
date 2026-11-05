@@ -26,7 +26,9 @@ export const SETTINGS_DEFAULTS = {
 	},
 	hideThinkingBlock: false,
 	showCacheMissNotices: false,
-	quietStartup: false,
+	// MARS default: slim startup — header only, no resource listing wall.
+	// "header" hides details while keeping the logo + hint line.
+	quietStartup: "header",
 	defaultProjectTrust: "ask",
 	collapseChangelog: false,
 	enableInstallTelemetry: true,

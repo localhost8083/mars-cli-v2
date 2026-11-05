@@ -33,14 +33,16 @@ describe("shouldRunFirstTimeSetup", () => {
 		}
 	});
 
-	it("returns true when experimental, default agent dir, and no settings.json", () => {
+	it("returns true with default agent dir and no settings.json", () => {
 		expect(shouldRunFirstTimeSetup(settingsPath)).toBe(true);
 	});
 
-	it("returns false when experimental features are disabled", () => {
+	// The fork is the official marscli distribution, so upstream's PI_EXPERIMENTAL
+	// gate does not apply: setup runs regardless.
+	it("runs even when PI_EXPERIMENTAL is unset", () => {
 		delete process.env.PI_EXPERIMENTAL;
 
-		expect(shouldRunFirstTimeSetup(settingsPath)).toBe(false);
+		expect(shouldRunFirstTimeSetup(settingsPath)).toBe(true);
 	});
 
 	it("returns false when a custom agent dir is set", () => {

@@ -3,11 +3,10 @@ import { lazyApi } from "../src/api/lazy.ts";
 import { envApiKeyAuth } from "../src/auth/helpers.ts";
 import type { AuthContext, AuthEvent } from "../src/auth/types.ts";
 import { getModel as getCompatModel, getModels as getCompatModels } from "../src/compat.ts";
-import { createModels, createProvider, getSupportedThinkingLevels } from "../src/models.ts";
+import { createModels, createProvider, getSupportedThinkingLevels, type Provider } from "../src/models.ts";
 import { InMemoryModelsStore } from "../src/models-store.ts";
 import {
 	builtinModels,
-	builtinProviders,
 	getAllBuiltinModels,
 	getBuiltinClassifierModel,
 	getBuiltinClassifierModels,
@@ -21,8 +20,20 @@ import { amazonBedrockProvider } from "../src/providers/amazon-bedrock.ts";
 import { anthropicProvider } from "../src/providers/anthropic.ts";
 import { cloudflareAIGatewayProvider } from "../src/providers/cloudflare-ai-gateway.ts";
 import { cloudflareWorkersAIProvider } from "../src/providers/cloudflare-workers-ai.ts";
+import { deepseekProvider } from "../src/providers/deepseek.ts";
 import { fauxAssistantMessage, fauxProvider } from "../src/providers/faux.ts";
+import { fireworksProvider } from "../src/providers/fireworks.ts";
+import { githubCopilotProvider } from "../src/providers/github-copilot.ts";
+import { googleProvider } from "../src/providers/google.ts";
 import { googleVertexProvider } from "../src/providers/google-vertex.ts";
+import { kimiCodingProvider } from "../src/providers/kimi-coding.ts";
+import { moonshotaiProvider } from "../src/providers/moonshotai.ts";
+import { moonshotaiCnProvider } from "../src/providers/moonshotai-cn.ts";
+import { openaiProvider } from "../src/providers/openai.ts";
+import { openaiCodexProvider } from "../src/providers/openai-codex.ts";
+import { opencodeProvider } from "../src/providers/opencode.ts";
+import { opencodeGoProvider } from "../src/providers/opencode-go.ts";
+import { openrouterProvider } from "../src/providers/openrouter.ts";
 import type {
 	Api,
 	DeferredCancelOptions,
@@ -43,6 +54,13 @@ function fakeAuthContext(env: Record<string, string>, files: string[] = []): Aut
 
 const neverAbortedSignal = new AbortController().signal;
 
+/** MARS CLI registers no built-in providers, so provider-behavior tests inject the factories they exercise. */
+function modelsWithProviders(...providers: Provider[]) {
+	const models = createModels();
+	for (const provider of providers) models.setProvider(provider);
+	return models;
+}
+
 const context = normalizeContext({ messages: [{ role: "user", content: "hi", timestamp: Date.now() }] });
 
 const DEFAULT_IMAGE_RESIZE = {
@@ -53,23 +71,22 @@ const DEFAULT_IMAGE_RESIZE = {
 };
 
 describe("builtin providers", () => {
-	it("builtinModels registers every builtin provider with models", async () => {
+	// MARS CLI ships no built-in registrations: upstream providers activate only
+	// through models.json or explicit setProvider, so builtinModels() starts empty.
+	it("builtinModels registers no providers until they are set", async () => {
 		const models = builtinModels();
-		const providers = models.getProviders();
-		expect(providers.length).toBe(builtinProviders().length);
-		expect(providers.map((p) => p.id)).toContain("anthropic");
+		expect(models.getProviders()).toEqual([]);
 
-		const anthropic = models.getModel("anthropic", "claude-haiku-4-5");
+		const modelsWithAnthropic = modelsWithProviders(anthropicProvider());
+		expect(modelsWithAnthropic.getProviders().map((p) => p.id)).toEqual(["anthropic"]);
+		const anthropic = modelsWithAnthropic.getModel("anthropic", "claude-haiku-4-5");
 		expect(anthropic?.api).toBe("anthropic-messages");
 
-		const all = models.getModels();
-		expect(all.length).toBeGreaterThan(500);
+		const all = modelsWithAnthropic.getModels();
+		expect(all.length).toBeGreaterThan(0);
+		expect(all.every((m) => m.provider === "anthropic")).toBe(true);
 
-		for (const provider of providers) {
-			const list = models.getAllModels(provider.id);
-			expect(list.length).toBeGreaterThan(0);
-			expect(list.every((m) => m.provider === provider.id)).toBe(true);
-		}
+		// Radius stays a built-in catalog entry the coding agent registers itself.
 		expect(getBuiltinModel("radius", "balanced")).toMatchObject({
 			api: "pi-messages",
 			provider: "radius",
@@ -160,7 +177,20 @@ describe("builtin providers", () => {
 	});
 
 	it("enables mid-conversation system messages only for verified models", () => {
-		const models = builtinModels();
+		const models = modelsWithProviders(
+			moonshotaiProvider(),
+			moonshotaiCnProvider(),
+			fireworksProvider(),
+			openaiProvider(),
+			openaiCodexProvider(),
+			anthropicProvider(),
+			opencodeProvider(),
+			opencodeGoProvider(),
+			githubCopilotProvider(),
+			deepseekProvider(),
+			openrouterProvider(),
+			googleProvider(),
+		);
 		const supported = [
 			["moonshotai", "kimi-k2.6"],
 			["moonshotai", "kimi-k2.7-code"],
@@ -219,7 +249,15 @@ describe("builtin providers", () => {
 	});
 
 	it("routes proxied tool changes through verified transports only", () => {
-		const models = builtinModels();
+		const models = modelsWithProviders(
+			opencodeProvider(),
+			opencodeGoProvider(),
+			githubCopilotProvider(),
+			moonshotaiProvider(),
+			moonshotaiCnProvider(),
+			openrouterProvider(),
+			anthropicProvider(),
+		);
 		for (const [provider, modelId] of [
 			["opencode", "gpt-5.6-terra"],
 			["github-copilot", "gpt-5.6-terra"],
@@ -261,7 +299,7 @@ describe("builtin providers", () => {
 	});
 
 	it("uses official Kimi K3 pricing for Moonshot providers", () => {
-		const models = builtinModels();
+		const models = modelsWithProviders(moonshotaiProvider(), moonshotaiCnProvider());
 		for (const provider of ["moonshotai", "moonshotai-cn"]) {
 			expect(models.getModel(provider, "kimi-k3")?.cost).toEqual({
 				input: 3,
@@ -273,7 +311,7 @@ describe("builtin providers", () => {
 	});
 
 	it("uses API-equivalent implied pricing for Kimi Coding subscription models", () => {
-		const models = builtinModels();
+		const models = modelsWithProviders(kimiCodingProvider());
 		const expectedCosts = {
 			k3: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 0 },
 			"kimi-for-coding-highspeed": { input: 1.9, output: 8, cacheRead: 0.38, cacheWrite: 0 },

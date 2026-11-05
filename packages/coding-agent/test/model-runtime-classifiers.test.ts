@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { InMemoryModelsStore } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthStorage } from "../src/core/auth-storage.ts";
-import { ModelRuntime } from "../src/core/model-runtime.ts";
+import type { ModelRuntime } from "../src/core/model-runtime.ts";
+import { createTestModelRuntime } from "./model-runtime-test-utils.ts";
 
 const context = {
 	state: { text: "Looks good" },
@@ -33,7 +34,7 @@ describe("ModelRuntime classifiers", () => {
 			modelsPath = join(dir, "models.json");
 			writeFileSync(modelsPath, JSON.stringify(modelsJson));
 		}
-		return ModelRuntime.create({
+		return createTestModelRuntime({
 			credentials: AuthStorage.inMemory(),
 			modelsStore: new InMemoryModelsStore(),
 			modelsPath,

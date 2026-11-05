@@ -27,6 +27,12 @@ type ResourceType = "extensions" | "skills" | "prompts" | "themes";
 type ConfigWriteScope = "global" | "project";
 type SettingsScope = "user" | "project";
 type ProjectOverrideState = "inherit" | "load" | "unload";
+
+/** Settings patterns and relative package sources are stored POSIX-style so they stay portable across OSes. */
+function toPosixPath(p: string): string {
+	return p.split("\\").join("/");
+}
+
 export type ScopedResolvedPaths = Record<ConfigWriteScope, ResolvedPaths>;
 
 const RESOURCE_TYPES = ["extensions", "skills", "prompts", "themes"] as const satisfies readonly ResourceType[];
@@ -782,9 +788,9 @@ class ResourceList implements Component, Focusable {
 		const patterns = new Set<string>([
 			this.getResourcePatternForScope(item, scope),
 			item.path,
-			relative(baseDir, item.path),
+			toPosixPath(relative(baseDir, item.path)),
 		]);
-		if (item.metadata.baseDir) patterns.add(relative(item.metadata.baseDir, item.path));
+		if (item.metadata.baseDir) patterns.add(toPosixPath(relative(item.metadata.baseDir, item.path)));
 		return patterns;
 	}
 
@@ -792,14 +798,14 @@ class ResourceList implements Component, Focusable {
 		const sourceScope = this.getItemScope(item);
 		if (scope !== sourceScope || item.metadata.source === "builtin") return item.path;
 		const baseDir = item.metadata.baseDir ?? this.getTopLevelBaseDir(sourceScope);
-		return relative(baseDir, item.path);
+		return toPosixPath(relative(baseDir, item.path));
 	}
 
 	private createPackageOverrideSource(item: ResourceItem): PackageSource {
 		const source = item.metadata.source;
 		if (!isLocalPath(source)) return { source, autoload: false };
 		const sourcePath = resolvePath(source, this.getTopLevelBaseDir(this.getItemScope(item)), { trim: true });
-		return { source: relative(this.getTopLevelBaseDir("project"), sourcePath) || ".", autoload: false };
+		return { source: toPosixPath(relative(this.getTopLevelBaseDir("project"), sourcePath)) || ".", autoload: false };
 	}
 
 	private packageSourceStringMatches(
@@ -850,12 +856,12 @@ class ResourceList implements Component, Focusable {
 		if (item.metadata.source === "builtin") return item.path;
 		const scope = item.metadata.scope as "user" | "project";
 		const baseDir = item.metadata.baseDir ?? this.getTopLevelBaseDir(scope);
-		return relative(baseDir, item.path);
+		return toPosixPath(relative(baseDir, item.path));
 	}
 
 	private getPackageResourcePattern(item: ResourceItem): string {
 		const baseDir = item.metadata.baseDir ?? dirname(item.path);
-		return relative(baseDir, item.path);
+		return toPosixPath(relative(baseDir, item.path));
 	}
 }
 

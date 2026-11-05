@@ -4,11 +4,12 @@ import { parseArgs } from "../src/cli/args.ts";
 import { AuthCommandError, isAuthCommandHelp, parseAuthCommand } from "../src/cli/auth-command.ts";
 import { resolveCredentialForPrint } from "../src/cli/credential-print.ts";
 import { AuthStorage } from "../src/core/auth-storage.ts";
-import { ModelRuntime } from "../src/core/model-runtime.ts";
+import type { ModelRuntime } from "../src/core/model-runtime.ts";
 import { main } from "../src/main.ts";
+import { createTestModelRuntime } from "./model-runtime-test-utils.ts";
 
 async function createRuntime(credentials: AuthStorage): Promise<ModelRuntime> {
-	return ModelRuntime.create({
+	return createTestModelRuntime({
 		credentials,
 		modelsPath: null,
 		modelsStore: new InMemoryModelsStore(),
@@ -89,7 +90,7 @@ describe("credential print commands", () => {
 			const stderr = errorSpy.mock.calls.map(([message]) => String(message)).join("\n");
 			expect(stderr).toContain('Unknown option --credentails for "auth check".');
 			expect(stderr).toContain(
-				'Use "pi --help" or "pi auth check --provider <provider> [--json] [--credentials] [--no-refresh]".',
+				'Use "mars --help" or "mars auth check --provider <provider> [--json] [--credentials] [--no-refresh]".',
 			);
 			expect(process.exitCode).toBe(1);
 		} finally {

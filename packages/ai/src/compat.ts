@@ -41,6 +41,7 @@ import { piMessagesApi } from "./api/pi-messages.lazy.ts";
 import { getEnvApiKey } from "./env-api-keys.ts";
 import type { ModelsApiStreamOptions } from "./models.ts";
 import { builtinModels, getBuiltinModel, getBuiltinModels, getBuiltinProviders } from "./providers/all.ts";
+import { cloudflareStreams } from "./providers/cloudflare-stream.ts";
 
 export type { BuiltinProvider } from "./providers/all.ts";
 
@@ -263,7 +264,10 @@ export function stream<TApi extends Api>(
 		return builtinProvider.stream(model, transcript, withEnvApiKey(model, options) as ApiStreamOptions<TApi>);
 	}
 	const provider = resolveApiProvider(model.api);
-	return provider.stream(model, transcript, withEnvApiKey(model, options) as StreamOptions);
+	// Unregistered providers bypass provider wrappers, so re-apply the Cloudflare
+	// endpoint materialization that catalog registration would normally supply.
+	const streams = model.provider.startsWith("cloudflare-") ? cloudflareStreams(provider) : provider;
+	return streams.stream(model, transcript, withEnvApiKey(model, options) as StreamOptions);
 }
 
 export async function complete<TApi extends Api>(
@@ -289,7 +293,8 @@ export function streamSimple<TApi extends Api>(
 		return builtinProvider.streamSimple(model, transcript, withEnvApiKey(model, options));
 	}
 	const provider = resolveApiProvider(model.api);
-	return provider.streamSimple(model, transcript, withEnvApiKey(model, options));
+	const streams = model.provider.startsWith("cloudflare-") ? cloudflareStreams(provider) : provider;
+	return streams.streamSimple(model, transcript, withEnvApiKey(model, options));
 }
 
 export async function completeSimple<TApi extends Api>(

@@ -760,7 +760,11 @@ export function hyperlink(text: string, url: string): string {
 function shortenImagePath(filename: string): string {
 	const home = homedir();
 	if (home && (filename === home || filename.startsWith(`${home}/`) || filename.startsWith(`${home}\\`))) {
-		return `~${filename.slice(home.length)}`;
+		// Display convention: `~` abbreviations always render with `/`, not the platform separator.
+		return `~/${filename
+			.slice(home.length)
+			.replace(/^[/\\]/, "")
+			.replaceAll("\\", "/")}`;
 	}
 	return filename;
 }

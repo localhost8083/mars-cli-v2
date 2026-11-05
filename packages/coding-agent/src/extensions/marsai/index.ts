@@ -12,6 +12,7 @@ import type {
 	ExtensionAPI,
 	ExtensionFactory,
 	ProviderChatModelConfig,
+	ProviderConfig,
 	ProviderModelConfig,
 } from "../../core/extensions/types.ts";
 import { resolveConfigValue } from "../../core/resolve-config-value.ts";
@@ -159,22 +160,28 @@ function accountLines(stored: Record<string, unknown>, account: MarsAccountInfo 
 	return lines;
 }
 
+/** Provider registration for `marsai`, shared by the extension and the bare
+ * auth-check runtime so `mars auth` works without loading extensions. */
+export function marsaiProviderConfig(): ProviderConfig {
+	return {
+		name: "MarsAI",
+		baseUrl: `${marsServer()}/v1`,
+		apiKey: "$MARSAI_API_KEY",
+		api: "openai-completions",
+		models: [FALLBACK_MODEL],
+		refreshModels: refreshMarsModels,
+		oauth: {
+			name: "MarsAI",
+			login: marsDeviceLogin,
+			refreshToken: marsRefreshToken,
+			getApiKey: marsApiKey,
+		},
+	};
+}
+
 export function createMarsaiExtension(): ExtensionFactory {
 	return (pi: ExtensionAPI) => {
-		pi.registerProvider(PROVIDER_ID, {
-			name: "MarsAI",
-			baseUrl: `${marsServer()}/v1`,
-			apiKey: "$MARSAI_API_KEY",
-			api: "openai-completions",
-			models: [FALLBACK_MODEL],
-			refreshModels: refreshMarsModels,
-			oauth: {
-				name: "MarsAI",
-				login: marsDeviceLogin,
-				refreshToken: marsRefreshToken,
-				getApiKey: marsApiKey,
-			},
-		});
+		pi.registerProvider(PROVIDER_ID, marsaiProviderConfig());
 
 		pi.registerTool(createWebFetchToolDefinition());
 		pi.registerTool(createWebSearchToolDefinition());

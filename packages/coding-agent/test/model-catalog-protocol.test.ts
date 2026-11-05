@@ -11,7 +11,7 @@ import {
 	selectModelCatalog,
 } from "../../../scripts/model-catalog-protocol.ts";
 import { VERSION } from "../src/config.ts";
-import { ModelRuntime } from "../src/core/model-runtime.ts";
+import { createTestModelRuntime } from "./model-runtime-test-utils.ts";
 import { allowNetwork } from "./test-network-env.ts";
 
 // Runs the current client against the catalog selection pi.dev performs, using
@@ -107,7 +107,7 @@ describe("model catalog protocol with the current client", () => {
 
 	it("negotiates the catalog for its version and reaches the OpenRouter API", async () => {
 		allowNetwork();
-		const runtime = await ModelRuntime.create({
+		const runtime = await createTestModelRuntime({
 			credentials: new InMemoryCredentialStore(),
 			modelsPath: null,
 			catalogBaseUrl,

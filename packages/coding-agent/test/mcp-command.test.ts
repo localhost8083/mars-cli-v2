@@ -49,9 +49,10 @@ describe("pi mcp", () => {
 		expect(exitCode).toBe(1);
 		expect(output).toContain("fixture: connected, 1 tool (codemode, global)\n");
 		expect(output).toContain("  tools: echo");
-		expect(output).toContain(
-			"broken: failed (codemode, global)\n  pi-test-missing-mcp-server\n  spawn pi-test-missing-mcp-server ENOENT",
-		);
+		expect(output).toContain("broken: failed (codemode, global)");
+		// The command name appears in both POSIX ("spawn ... ENOENT") and Windows
+		// ("'...' is not recognized") spawn failures.
+		expect(output).toContain("pi-test-missing-mcp-server");
 		expect(output).toContain("parked: disabled (codemode, global)");
 		expect(output).toContain("config error: ");
 		expect(output).toContain('server "bad" needs either "command"');
@@ -105,12 +106,12 @@ describe("pi mcp", () => {
 			const signedOut = await run(["list"], radius, undefined, async () => undefined);
 			expect(signedOut.exitCode).toBe(1);
 			expect(signedOut.output).toContain("radius: needs sign-in (codemode, global)");
-			expect(signedOut.output).toContain("  sign in with: /login radius in pi");
+			expect(signedOut.output).toContain("  sign in with: /login radius in mars");
 
 			for (const command of ["login", "logout"]) {
 				expect(await run([command, "radius"], radius)).toMatchObject({
 					exitCode: 1,
-					output: `MCP server "radius" uses the credentials of provider "radius". Run /${command} radius in pi.`,
+					output: `MCP server "radius" uses the credentials of provider "radius". Run /${command} radius in mars.`,
 				});
 			}
 		} finally {
@@ -204,7 +205,7 @@ describe("pi mcp", () => {
 			undefined,
 			agentDir,
 		);
-		expect(oauth.output).toContain("If it requires sign-in: pi mcp login sentry");
+		expect(oauth.output).toContain("If it requires sign-in: mars mcp login sentry");
 		expect(readConfig(join(agentDir, "mcp.json")).mcpServers).toMatchObject({
 			sentry: { url: "https://mcp.sentry.dev/mcp", oauth: { clientId: "pi", clientName: "Claude Code" } },
 		});
@@ -241,7 +242,7 @@ describe("pi mcp", () => {
 	it("adds and removes project servers", async () => {
 		const added = await run(["add", "-l", "local", "--", "node", "server.js"], undefined);
 		expect(added.output).toContain("The project is not trusted");
-		const projectConfig = join(added.agentDir, ".pi", "mcp.json");
+		const projectConfig = join(added.agentDir, ".mars", "mcp.json");
 		expect(readConfig(projectConfig)).toEqual({ mcpServers: { local: { command: "node", args: ["server.js"] } } });
 
 		const wrongScope = await run(["remove", "local"], undefined, added.agentDir);

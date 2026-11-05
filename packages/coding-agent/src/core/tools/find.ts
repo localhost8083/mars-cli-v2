@@ -211,9 +211,8 @@ export function createFindToolDefinition(
 							if (!pattern.startsWith("/") && !pattern.startsWith("**/") && pattern !== "**") {
 								effectivePattern = `**/${pattern}`;
 							}
-							// fd matches full paths using native separators on Windows.
-							if (process.platform === "win32")
-								effectivePattern = effectivePattern.replaceAll("/", String.raw`[/\\]`);
+							// Forward-slash patterns match Windows backslash paths fine (globset
+							// normalizes separators); rewriting separators breaks `**` semantics.
 						}
 						args.push("--", effectivePattern, searchPath);
 

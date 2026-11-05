@@ -12,13 +12,13 @@ import {
 } from "../src/models.ts";
 import { InMemoryModelsStore } from "../src/models-store.ts";
 import {
-	builtinModels,
 	getAllBuiltinModels,
 	getBuiltinClassifierModels,
 	getBuiltinImageModel,
 	getBuiltinImageModels,
 	getBuiltinModels,
 } from "../src/providers/all.ts";
+import { openrouterProvider } from "../src/providers/openrouter.ts";
 import type {
 	AnyModel,
 	Api,
@@ -386,8 +386,10 @@ describe("Models with image models", () => {
 		expect(getBuiltinImageModel("openrouter", "black-forest-labs/flux.2-pro").type).toBe("image");
 	});
 
-	it("builtinModels exposes OpenRouter image models under the openrouter provider", async () => {
-		const models = builtinModels({ authContext: fakeAuthContext({ OPENROUTER_API_KEY: "or-key" }) });
+	it("OpenRouter image models register under the openrouter provider", async () => {
+		// MARS CLI registers no built-in providers; inject the one under test.
+		const models = createModels({ authContext: fakeAuthContext({ OPENROUTER_API_KEY: "or-key" }) });
+		models.setProvider(openrouterProvider());
 		const provider = models.getProvider("openrouter")!;
 		const images = models.getModelsOfType("image", "openrouter");
 		expect(images.length).toBeGreaterThan(0);

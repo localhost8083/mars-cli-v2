@@ -15,7 +15,8 @@ import {
 } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 import { AuthStorage } from "../src/core/auth-storage.ts";
-import { ModelRuntime } from "../src/core/model-runtime.ts";
+import type { ModelRuntime } from "../src/core/model-runtime.ts";
+import { createTestModelRuntime } from "./model-runtime-test-utils.ts";
 
 function imageModel(provider: string, id: string): ImageModel<"test-images"> {
 	return {
@@ -82,7 +83,7 @@ describe("ModelRuntime image generation", () => {
 			modelsPath = join(dir, "models.json");
 			writeFileSync(modelsPath, JSON.stringify(modelsJson));
 		}
-		return ModelRuntime.create({
+		return createTestModelRuntime({
 			credentials: AuthStorage.inMemory(),
 			modelsStore: new InMemoryModelsStore(),
 			modelsPath,

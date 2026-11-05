@@ -63,6 +63,8 @@ describe("InteractiveMode.handleCtrlZ", () => {
 	});
 
 	test("keeps the process alive while suspended and restores the TUI on SIGCONT", () => {
+		const platformDescriptor = Object.getOwnPropertyDescriptor(process, "platform");
+		Object.defineProperty(process, "platform", { configurable: true, value: "linux" });
 		const ui: FakeUi = {
 			start: vi.fn(),
 			stop: vi.fn(),
@@ -110,9 +112,15 @@ describe("InteractiveMode.handleCtrlZ", () => {
 		expect(removeListenerSpy).toHaveBeenCalledWith("SIGINT", sigintHandler);
 		expect(ui.start).toHaveBeenCalledTimes(1);
 		expect(ui.requestRender).toHaveBeenCalledWith(true);
+
+		if (platformDescriptor) {
+			Object.defineProperty(process, "platform", platformDescriptor);
+		}
 	});
 
 	test("cleans up the temporary handlers if suspension fails", () => {
+		const platformDescriptor = Object.getOwnPropertyDescriptor(process, "platform");
+		Object.defineProperty(process, "platform", { configurable: true, value: "linux" });
 		const ui: FakeUi = {
 			start: vi.fn(),
 			stop: vi.fn(),
@@ -145,5 +153,9 @@ describe("InteractiveMode.handleCtrlZ", () => {
 		expect(removeListenerSpy).toHaveBeenCalledWith("SIGINT", expect.any(Function));
 		expect(ui.start).not.toHaveBeenCalled();
 		expect(ui.requestRender).not.toHaveBeenCalled();
+
+		if (platformDescriptor) {
+			Object.defineProperty(process, "platform", platformDescriptor);
+		}
 	});
 });

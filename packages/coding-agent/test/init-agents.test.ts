@@ -34,10 +34,11 @@ describe("init", () => {
 
 	test("builds prompt with stats, focus, and path", async () => {
 		const stats = { lines: ["- project: demo"] };
-		const prompt = buildInitPrompt(stats, "focus on tests", "C:\\repo");
+		// Separator-free dir keeps this assertion identical on POSIX and Windows.
+		const prompt = buildInitPrompt(stats, "focus on tests", "repo-dir");
 		expect(prompt).toContain("- project: demo");
 		expect(prompt).toContain("focus on tests");
-		expect(prompt).toContain("C:/repo");
+		expect(prompt).toContain("repo-dir/AGENTS.md");
 		expect(prompt).not.toContain("$STATS");
 		expect(prompt).not.toContain("$ARGUMENTS");
 	});

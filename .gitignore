@@ -15,6 +15,10 @@ packages/ai/src/providers/.model-generation-*/
 # Environment
 .env
 
+# Internal docs, not published
+AGENTS.md
+AUDIT_REPORT.md
+
 # Editor files
 .vscode/
 .zed/

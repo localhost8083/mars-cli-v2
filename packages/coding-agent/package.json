@@ -6,7 +6,7 @@
 	"piConfig": {
 		"name": "mars",
 		"configDir": ".mars",
-		"version": "2.0.15"
+		"version": "2.0.16"
 	},
 	"bin": {
 		"mars": "dist/bundle/cli.js"

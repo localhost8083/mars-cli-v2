@@ -37,8 +37,10 @@ MARS CLI (`mars`) is a coding agent that lives in your terminal. It reads, write
 - **Free-tier delegation** — inline `?question`, `/ghost` (replay last prompt), `/budget`, subagents, and auto-recon all run on `marsai/auto-free` at zero cost, isolated from your main session context.
 - **Subagents** — single, parallel, and chained dispatch to isolated child `mars` processes, each with its own context window. Explore-first auto-recon appends a repo map to the system prompt on the first turn of a fresh session.
 - **Web tools** — `web_fetch` (manual-redirect fetching with per-hop private-network blocking) and `web_search` (DuckDuckGo lite).
-- **`/handoff`** — export a session as JSONL with copy-paste import instructions; move work between machines or teammates.
-- **`/update`** — self-update from the npm registry, async and non-blocking.
+- **`/handoff`** - export a session as JSONL with copy-paste import instructions; move work between machines or teammates.
+- **`/init`** - generate or improve `AGENTS.md`: collects project stats (manifests, scripts, workspaces, file counts), then the agent investigates the repo and writes the instruction file itself.
+- **`mars pack`** - export tracked files as XML context for handoff to another model. Gitignore-aware, skips binaries, redacts secrets, caps output at 200KB.
+- **`/update`** - self-update from the npm registry, async and non-blocking.
 - **Sessions, themes, MCP, codemode** — resumable sessions, themable TUI, MCP server support, and JavaScript code mode.
 - **Safe by default** — trust dialogs for project folders, SSRF-protected redirects, SIGTERM→SIGKILL child process escalation.
 
@@ -65,6 +67,7 @@ Handy keys:
 | --- | --- |
 | `?question` | Ask a free model without touching session context |
 | `/ghost` | Replay the last prompt on the free model |
+| `/init [focus]` | Create or improve `AGENTS.md` (focus text optional) |
 | `!cmd` | Run a shell command inline |
 | `ctrl+o` | Expand the transcript |
 | `/handoff` | Export the session as JSONL |
@@ -74,6 +77,9 @@ Non-interactive:
 ```bash
 mars -p "refactor server.js to use ES modules"   # one-shot prompt
 mars --mode json -p "list dead exports"           # JSON output
+mars pack                                         # repo as XML for another model
+mars pack --query "src/**/*.ts" --max-bytes 100000
+mars pack --full                                  # no size cap
 ```
 
 ## Configuration

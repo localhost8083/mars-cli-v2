@@ -19,6 +19,8 @@ MARS CLI (`mars`) is a coding agent that lives in your terminal. It reads, write
 
 ## Screenshots
 
+<img src="docs/assets/marscli-demo.gif" alt="MARS CLI in action" width="640"/>
+
 <table>
   <tr>
     <td align="center"><img src="docs/assets/screenshot-header.png" alt="MARS CLI startup header" width="440"/><br/><sub>Startup header</sub></td>

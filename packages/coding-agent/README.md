@@ -1,14 +1,7 @@
 <p align="center">
-  <a href="https://pi.dev">
-    <img alt="Mars logo" src="https://pi.dev/logo-auto.svg" width="128">
-  </a>
-</p>
-<p align="center">
   <a href="https://discord.com/invite/3cU7Bz4UPx"><img alt="Discord" src="https://img.shields.io/badge/discord-community-5865F2?style=flat-square&logo=discord&logoColor=white" /></a>
-  <a href="https://www.npmjs.com/package/@earendil-works/pi-coding-agent"><img alt="npm" src="https://img.shields.io/npm/v/@earendil-works/pi-coding-agent?style=flat-square&logo=npm&logoColor=white" /></a>
+  <a href="https://www.npmjs.com/package/@mars_ai/marscli"><img alt="npm" src="https://img.shields.io/npm/v/@mars_ai/marscli?style=flat-square&logo=npm&logoColor=white" /></a>
 </p>
-
-> New issues and PRs from new contributors are closed automatically. Maintainers review closed submissions daily. See [CONTRIBUTING.md](https://github.com/earendil-works/pi/blob/main/CONTRIBUTING.md).
 
 # Mars
 
@@ -25,24 +18,10 @@ Use Mars [interactively](docs/usage.md), automate it in [print or JSON mode](doc
 Install the command-line interface:
 
 ```bash
-curl -fsSL https://pi.dev/install.sh | sh
+npm install -g --ignore-scripts @mars_ai/marscli
 ```
 
-On Windows:
-
-```shell
-powershell -c "irm https://pi.dev/install.ps1 | iex"
-```
-
-The installer pins all dependencies and updates Mars with `mars update`. Alternatively, install directly with npm, which does not pin transitive dependencies:
-
-```bash
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent
-```
-
-Mars requires Node.js 22.19 or newer. The macOS, Linux, and Windows installers can install it if needed. Mars does not require dependency lifecycle scripts for a normal npm installation.
-
-On macOS and Linux, Nix users can install the latest release with `nix profile add github:earendil-works/pi/stable`. See the [quickstart](docs/quickstart.md#1-install-pi) for updating and pinning releases.
+Mars requires Node.js 22.19 or newer. Mars does not require dependency lifecycle scripts for a normal npm installation.
 
 Start Mars in the directory where you want it to work:
 
@@ -73,8 +52,8 @@ To publish sessions, use [`badlogic/pi-share-hf`](https://github.com/badlogic/pi
 Clone the repository, install its dependencies, and run Mars from source:
 
 ```bash
-git clone https://github.com/earendil-works/pi
-cd mars
+git clone https://github.com/localhost8083/mars-cli-v2
+cd mars-cli-v2
 npm install --ignore-scripts
 ./pi-test.sh
 ```
@@ -87,8 +66,6 @@ Before submitting changes, run:
 npm run check
 ./test.sh
 ```
-
-Read [CONTRIBUTING.md](https://github.com/earendil-works/pi/blob/main/CONTRIBUTING.md) before opening an issue or pull request. It defines the contribution gate, issue quality bar, and required checks. Read [AGENTS.md](https://github.com/earendil-works/pi/blob/main/AGENTS.md) for repository-specific implementation, testing, dependency, and release rules.
 
 ## License
 

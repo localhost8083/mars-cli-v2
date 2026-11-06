@@ -6,31 +6,13 @@ For native Windows setup, read [Windows Setup](windows.md). For Android, read [T
 
 ## 1. Install Mars
 
-Install Mars with the installer on macOS, Linux, or Windows:
-
-```bash tab="macOS / Linux"
-curl -fsSL https://pi.dev/install.sh | sh
-```
-
-```powershell tab="Windows"
-powershell -c "irm https://pi.dev/install.ps1 | iex"
-```
-
-Both installers pin all dependencies and update Mars with `mars update`. Alternatively, install Mars from npm, which does not pin transitive dependencies. This requires Node.js 22.19 or newer:
+Install Mars from npm on macOS, Linux, or Windows. This requires Node.js 22.19 or newer:
 
 ```bash
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+npm install -g --ignore-scripts @mars_ai/marscli
 ```
 
 Mars does not require dependency lifecycle scripts for a normal npm installation.
-
-With Nix on macOS or Linux, install the latest release from Mars's flake. Nix builds Mars from source:
-
-```bash
-nix profile add github:earendil-works/pi/stable
-```
-
-Older Nix versions use `nix profile install` instead. Update with `nix profile upgrade mars`; `mars update` cannot update a Nix installation. To pin a release, use a tag such as `github:earendil-works/pi/v1.0.0`.
 
 Verify the installation:
 
@@ -122,19 +104,7 @@ Start with the least powerful mechanism that meets your need:
 If you installed Mars with npm, run:
 
 ```bash
-npm uninstall -g @earendil-works/pi-coding-agent
-```
-
-If you used the installer, run it again and choose **Uninstall Mars**:
-
-```bash
-curl -fsSL https://pi.dev/install.sh | sh
-```
-
-If you installed Mars with Nix, run:
-
-```bash
-nix profile remove mars
+npm uninstall -g @mars_ai/marscli
 ```
 
 None of these methods removes configuration, credentials, sessions, or installed Mars packages from `~/.mars/agent/`.

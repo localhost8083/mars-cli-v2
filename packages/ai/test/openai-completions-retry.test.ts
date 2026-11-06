@@ -92,16 +92,19 @@ describe("openai-completions provider retries", () => {
 
 	it("honors provider retries while keeping SDK retries disabled", async () => {
 		vi.useFakeTimers();
-		mockState.requestErrors = [
-			Object.assign(new Error("rate limited"), {
-				status: 429,
+		const transientError = (message: string) =>
+			Object.assign(new Error(message), {
+				status: 502,
 				headers: new Headers({ "retry-after-ms": "100" }),
-			}),
-			Object.assign(new Error("server error"), {
-				status: 500,
-				headers: new Headers({ "retry-after-ms": "100" }),
-			}),
-		];
+				body: JSON.stringify({
+					error: {
+						message: "Upstream connection failed before the request could be processed. Please retry.",
+						type: "server_error",
+						code: 502,
+					},
+				}),
+			});
+		mockState.requestErrors = [transientError("first failure"), transientError("second failure")];
 
 		const result = consume({ maxRetries: 2, maxRetryDelayMs: 100 });
 		await vi.advanceTimersByTimeAsync(0);
@@ -124,9 +127,16 @@ describe("openai-completions provider retries", () => {
 
 	it("fails immediately when a provider-requested retry delay exceeds the limit", async () => {
 		mockState.requestErrors = [
-			Object.assign(new Error("rate limited"), {
-				status: 429,
+			Object.assign(new Error("gateway overloaded"), {
+				status: 502,
 				headers: new Headers({ "retry-after": "277403" }),
+				body: JSON.stringify({
+					error: {
+						message: "Upstream connection failed before the request could be processed. Please retry.",
+						type: "server_error",
+						code: 502,
+					},
+				}),
 			}),
 		];
 
@@ -134,7 +144,7 @@ describe("openai-completions provider retries", () => {
 
 		expect(result.stopReason).toBe("error");
 		expect(result.errorMessage).toContain("Server requested 277403s retry delay (max: 1s)");
-		expect(result.errorMessage).toContain("rate limited");
+		expect(result.errorMessage).toContain("gateway overloaded");
 		expect(mockState.requestOptions).toEqual([expect.objectContaining({ maxRetries: 0 })]);
 	});
 });

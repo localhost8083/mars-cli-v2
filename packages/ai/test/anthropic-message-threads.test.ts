@@ -461,7 +461,18 @@ describe("Anthropic message threads", () => {
 		await say(h, messages);
 		messages.push(user("second"));
 		h.queue.push(
-			() => errorResponse(503, "overloaded", undefined, { "retry-after-ms": "0" }),
+			// Transient gateway shape; transport-level retry re-issues the continue.
+			() =>
+				Response.json(
+					{
+						error: {
+							message: "Upstream connection failed before the request could be processed. Please retry.",
+							type: "server_error",
+							code: 502,
+						},
+					},
+					{ status: 502, headers: { "retry-after-ms": "0" } },
+				),
 			() => errorResponse(400, "in flight", "thread_continue_in_flight"),
 		);
 		const result = await say(h, messages, { options: { maxRetries: 1 } });

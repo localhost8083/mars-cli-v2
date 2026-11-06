@@ -953,7 +953,7 @@ export class SettingsManager {
 	getProviderRetrySettings(): { timeoutMs?: number; maxRetries?: number; maxRetryDelayMs: number } {
 		return {
 			timeoutMs: this.settings.retry?.provider?.timeoutMs,
-			maxRetries: this.settings.retry?.provider?.maxRetries,
+			maxRetries: this.settings.retry?.provider?.maxRetries ?? SETTINGS_DEFAULTS.retry.provider.maxRetries,
 			maxRetryDelayMs:
 				this.settings.retry?.provider?.maxRetryDelayMs ?? SETTINGS_DEFAULTS.retry.provider.maxRetryDelayMs,
 		};

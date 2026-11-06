@@ -12,6 +12,9 @@ import OpenAI from "openai";
 import { describe, expect, it } from "vitest";
 import {
 	formatProviderError,
+	GATEWAY_OVERLOADED_HINT,
+	gatewayRetryAfterMs,
+	isTransientGatewayErrorBody,
 	MAX_PROVIDER_ERROR_BODY_CHARS,
 	normalizeProviderError,
 	truncateErrorText,
@@ -233,6 +236,82 @@ describe("formatProviderError", () => {
 		const norm = normalizeProviderError({ reason: "boom" });
 
 		expect(formatProviderError(norm)).toBe('{"reason":"boom"}');
+	});
+});
+
+describe("transient gateway errors", () => {
+	const SERVER_ERROR_BODY = JSON.stringify({
+		error: {
+			message: "Upstream connection failed before the request could be processed. Please retry.",
+			type: "server_error",
+			code: 502,
+		},
+	});
+	const CF_PAGE_BODY = JSON.stringify({
+		error_category: "origin",
+		retryable: true,
+		retry_after: 60,
+		cloudflare_error: true,
+	});
+	const CF_HTML_BODY = `<!DOCTYPE html><html><head><title>502 Bad Gateway | Cloudflare</title></head></html>`;
+	const UPSTREAM_MODEL_ERROR_BODY = JSON.stringify({
+		error: { message: "Upstream error: model overloaded", type: "upstream_error", code: 500 },
+	});
+
+	it("classifies gateway shapes as transient", () => {
+		expect(isTransientGatewayErrorBody(SERVER_ERROR_BODY)).toBe(true);
+		expect(isTransientGatewayErrorBody(CF_PAGE_BODY)).toBe(true);
+		expect(isTransientGatewayErrorBody(CF_HTML_BODY)).toBe(true);
+	});
+
+	it("does not classify model-upstream or unrelated bodies as transient", () => {
+		expect(isTransientGatewayErrorBody(UPSTREAM_MODEL_ERROR_BODY)).toBe(false);
+		expect(isTransientGatewayErrorBody(JSON.stringify({ error: { message: "boom", type: "server_error" } }))).toBe(
+			false,
+		);
+		expect(isTransientGatewayErrorBody(undefined)).toBe(false);
+		expect(isTransientGatewayErrorBody("")).toBe(false);
+	});
+
+	it("caps body retry_after at 15 seconds", () => {
+		expect(gatewayRetryAfterMs(CF_PAGE_BODY)).toBe(15_000);
+		expect(gatewayRetryAfterMs(JSON.stringify({ retry_after: 3 }))).toBe(3_000);
+		expect(gatewayRetryAfterMs(UPSTREAM_MODEL_ERROR_BODY)).toBeUndefined();
+		expect(gatewayRetryAfterMs(SERVER_ERROR_BODY)).toBeUndefined();
+	});
+
+	it("appends the overload hint when a transient gateway error is formatted", () => {
+		const norm = normalizeProviderError(
+			Object.assign(new Error("502 status code (no body)"), { status: 502, body: SERVER_ERROR_BODY }),
+		);
+
+		const formatted = formatProviderError(norm);
+
+		expect(formatted).toContain("Upstream connection failed before the request could be processed. Please retry.");
+		expect(formatted).toContain(GATEWAY_OVERLOADED_HINT);
+		expect(formatted).not.toContain('"error"');
+	});
+
+	it("labels Cloudflare HTML pages instead of dumping markup", () => {
+		const norm = normalizeProviderError(
+			Object.assign(new Error("502 status code (no body)"), { status: 502, body: CF_HTML_BODY }),
+		);
+
+		const formatted = formatProviderError(norm);
+
+		expect(formatted).toBe(`502: Cloudflare error page (origin unavailable) — ${GATEWAY_OVERLOADED_HINT}`);
+	});
+
+	it("formats non-gateway errors without the hint", () => {
+		const norm = normalizeProviderError(
+			Object.assign(new Error("500 status code"), { status: 500, body: UPSTREAM_MODEL_ERROR_BODY }),
+		);
+
+		const formatted = formatProviderError(norm);
+
+		// The JSON shape unwraps to its message for readability, but no hint.
+		expect(formatted).toBe("500: Upstream error: model overloaded");
+		expect(formatted).not.toContain(GATEWAY_OVERLOADED_HINT);
 	});
 });
 

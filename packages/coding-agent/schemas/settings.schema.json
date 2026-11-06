@@ -192,7 +192,8 @@
             },
             "maxRetries": {
               "type": "number",
-              "description": "SDK or provider retry attempts."
+              "description": "Transport-level retry attempts for transient gateway failures.",
+              "default": 3
             },
             "maxRetryDelayMs": {
               "type": "number",

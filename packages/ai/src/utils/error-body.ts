@@ -160,12 +160,107 @@ export function formatProviderError(norm: NormalizedProviderError, prefix?: stri
 			? `${prefix} (${norm.status}): ${norm.message}`
 			: norm.message;
 	}
-	return prefix !== undefined ? `${prefix} (${norm.status}): ${norm.body}` : `${norm.status}: ${norm.body}`;
+	const label = prefix !== undefined ? `${prefix} (${norm.status}): ` : `${norm.status}: `;
+	const base = `${label}${readableErrorBody(norm.body)}`;
+	return isTransientGatewayError(norm.status, norm.body) ? `${base} — ${GATEWAY_OVERLOADED_HINT}` : base;
 }
 
 export function truncateErrorText(text: string, maxChars: number): string {
 	if (text.length <= maxChars) return text;
 	return `${ownedSlice(text, 0, maxChars)}... [truncated ${text.length - maxChars} chars]`;
+}
+
+// --- Shared gateway transient-failure classification ---
+//
+// The MarsAI gateway sits behind Cloudflare in front of an overloaded origin.
+// Two failure shapes are transient (the gateway itself asks the client to
+// retry): a Cloudflare error page, and the JSON `server_error` emitted when
+// the gateway's own upstream retries are exhausted. Model-upstream 5xx JSON
+// errors ("Upstream error: ...") are real model failures and must surface.
+
+/** Hint appended to transient gateway errors that reach the user. */
+export const GATEWAY_OVERLOADED_HINT = "the API gateway is overloaded right now; try again shortly";
+
+/** HTTP statuses that may carry a transient gateway failure. */
+const TRANSIENT_GATEWAY_STATUSES: readonly number[] = [502, 503, 504, 529];
+
+/** Body-requested retry delays are capped; waiting out a 60s gateway window makes agent sessions feel dead. */
+const MAX_GATEWAY_RETRY_AFTER_MS = 15_000;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseJsonObject(text: string | undefined): Record<string, unknown> | undefined {
+	if (!text) return undefined;
+	const trimmed = text.trim();
+	if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return undefined;
+	try {
+		const parsed: unknown = JSON.parse(trimmed);
+		return isRecord(parsed) ? parsed : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Whether an error body matches a transient gateway failure shape: a
+ * Cloudflare error page (`cloudflare_error` / `origin_bad_gateway` markers or
+ * a Cloudflare HTML page), or the gateway's `server_error` JSON emitted when
+ * its own upstream retries are exhausted ("Upstream connection failed...").
+ */
+export function isTransientGatewayErrorBody(body: string | undefined): boolean {
+	if (!body) return false;
+	const lower = body.toLowerCase();
+	if (lower.includes("cloudflare_error") || lower.includes("origin_bad_gateway")) return true;
+	if (lower.includes("<html") && lower.includes("cloudflare")) return true;
+	const parsed = parseJsonObject(body);
+	const err = parsed?.error;
+	return (
+		isRecord(err) &&
+		err.type === "server_error" &&
+		typeof err.message === "string" &&
+		err.message.includes("Upstream connection failed")
+	);
+}
+
+export function isTransientGatewayStatus(status: number): boolean {
+	return TRANSIENT_GATEWAY_STATUSES.includes(status);
+}
+
+export function isTransientGatewayError(status: number | undefined, body: string | undefined): boolean {
+	return status !== undefined && isTransientGatewayStatus(status) && isTransientGatewayErrorBody(body);
+}
+
+/**
+ * `retry_after` seconds requested inside a gateway error body (top level or
+ * under `error`), capped at 15 seconds. Header `retry-after` handling takes
+ * precedence in the retry loop; bodies carry the field on gateway JSON shapes.
+ */
+export function gatewayRetryAfterMs(body: string | undefined): number | undefined {
+	const parsed = parseJsonObject(body);
+	if (!parsed) return undefined;
+	const raw = parsed.retry_after ?? (isRecord(parsed.error) ? parsed.error.retry_after : undefined);
+	if (typeof raw !== "number" || !Number.isFinite(raw) || raw < 0) return undefined;
+	return Math.min(raw * 1000, MAX_GATEWAY_RETRY_AFTER_MS);
+}
+
+/**
+ * Render a raw error body for display: unwrap the provider JSON shape
+ * (`{"error":{"message":"..."}}`) to its message and label Cloudflare HTML
+ * pages, instead of dumping raw JSON or markup at the user.
+ */
+function readableErrorBody(body: string): string {
+	const parsed = parseJsonObject(body);
+	const err = parsed?.error;
+	if (isRecord(err) && typeof err.message === "string" && err.message.trim()) {
+		return truncateErrorText(err.message.trim(), MAX_PROVIDER_ERROR_BODY_CHARS);
+	}
+	const lower = body.toLowerCase();
+	if (lower.includes("<html") && lower.includes("cloudflare")) {
+		return "Cloudflare error page (origin unavailable)";
+	}
+	return body;
 }
 
 export function safeJsonStringify(value: unknown): string {

@@ -1,3 +1,10 @@
+import {
+	gatewayRetryAfterMs,
+	isTransientGatewayErrorBody,
+	isTransientGatewayStatus,
+	normalizeProviderError,
+} from "./error-body.ts";
+
 const DEFAULT_MAX_RETRY_DELAY_MS = 60_000;
 
 interface ProviderRetryOptions {
@@ -21,19 +28,30 @@ function isProviderError(error: unknown): error is ProviderError {
 	);
 }
 
-/** Mirrors the pinned OpenAI/Anthropic SDK retry policy; review when either SDK is upgraded. */
+/** Body text a provider SDK attached to an error, when it kept one. */
+function providerErrorBodyText(error: ProviderError): string | undefined {
+	const norm = normalizeProviderError(error);
+	return norm.body ?? (norm.messageCarriesBody ? norm.message : undefined);
+}
+
+/**
+ * Retry policy. Transport failures (no response received) and 408/409 are
+ * transient and always retried. 5xx responses retry only when the body
+ * matches a transient gateway failure shape (Cloudflare error page or the
+ * gateway's exhausted-upstream `server_error`); model-upstream 5xx errors and
+ * bare 4xx (401/402/403/429) are real failures that surface unchanged — the
+ * agent-level retry classifier owns those. An explicit `x-should-retry`
+ * header always wins.
+ */
 function isRetryableProviderError(error: ProviderError): boolean {
 	const shouldRetry = error.headers?.get("x-should-retry");
 	if (shouldRetry === "true") return true;
 	if (shouldRetry === "false") return false;
 
 	if (error.status === undefined) return true;
-	return (
-		error.status === 408 ||
-		error.status === 409 ||
-		error.status === 429 ||
-		(typeof error.status === "number" && error.status >= 500)
-	);
+	if (error.status === 408 || error.status === 409) return true;
+	if (!isTransientGatewayStatus(error.status)) return false;
+	return isTransientGatewayErrorBody(providerErrorBodyText(error));
 }
 
 function validateServerRetryDelayMs(
@@ -64,8 +82,14 @@ function getRetryDelayMs(error: ProviderError, retryIndex: number, maxRetryDelay
 		if (Number.isFinite(delayMs)) return validateServerRetryDelayMs(delayMs, maxRetryDelayMs, error.message);
 	}
 
-	const exponentialDelay = Math.min(0.5 * 2 ** retryIndex, 8) * 1000;
-	return exponentialDelay * (1 - Math.random() * 0.25);
+	// Gateway error bodies carry retry_after seconds; capped so a full server
+	// window (60s) never stalls an interactive session.
+	const bodyDelayMs = gatewayRetryAfterMs(providerErrorBodyText(error));
+	if (bodyDelayMs !== undefined) return bodyDelayMs;
+
+	// 1s → 3s → 8s with ±20% jitter.
+	const backoffMs = Math.min(3 ** retryIndex, 8) * 1000;
+	return backoffMs * (0.8 + Math.random() * 0.4);
 }
 
 function createAbortError(): Error {
@@ -97,12 +121,12 @@ function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 /**
- * Reproduce the retry behavior used by the OpenAI and Anthropic SDKs while making
- * their backoff sleep interruptible. Their built-in retry timers ignore the
- * request AbortSignal, so callers must invoke the SDK with `maxRetries: 0` and
- * wrap the request with this helper. Provider-requested delays above
- * `maxRetryDelayMs` fail immediately (60 seconds by default); set it to zero to
- * disable the limit.
+ * Retry a provider request with interruptible backoff. Callers must invoke the
+ * SDK with `maxRetries: 0` and wrap the request with this helper. Only
+ * transport failures, 408/409, and transient gateway 5xx shapes retry (see
+ * `isRetryableProviderError`); provider-requested delays above
+ * `maxRetryDelayMs` fail immediately (60 seconds by default); set it to zero
+ * to disable the limit.
  */
 export async function retryProviderRequest<T>(
 	request: () => Promise<T>,

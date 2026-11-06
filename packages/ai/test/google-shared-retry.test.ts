@@ -2,21 +2,33 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { retryGoogleRequest } from "../src/api/google-shared.ts";
 
 /** Shaped like @google/genai's ApiError: has `status`, but no `headers`. */
-function googleApiError(status: number): Error {
-	return Object.assign(new Error(`got status: ${status}`), { status });
+function googleApiError(status: number, body?: unknown): Error {
+	return Object.assign(new Error(`got status: ${status}`), { status, ...(body !== undefined ? { error: body } : {}) });
 }
+
+/** The gateway's JSON shape when its own upstream retries are exhausted. */
+const SERVER_ERROR_BODY = {
+	error: {
+		message: "Upstream connection failed before the request could be processed. Please retry.",
+		type: "server_error",
+		code: 502,
+	},
+};
 
 describe("google request retries", () => {
 	afterEach(() => {
 		vi.useRealTimers();
 	});
 
-	it("retries a headers-less SDK error with a retryable status", async () => {
+	it("retries a headers-less SDK error with a transient gateway shape", async () => {
 		vi.useFakeTimers();
-		const request = vi.fn<() => Promise<string>>().mockRejectedValueOnce(googleApiError(429)).mockResolvedValue("ok");
+		const request = vi
+			.fn<() => Promise<string>>()
+			.mockRejectedValueOnce(googleApiError(502, SERVER_ERROR_BODY))
+			.mockResolvedValue("ok");
 
 		const result = retryGoogleRequest(request, { maxRetries: 1 });
-		await vi.advanceTimersByTimeAsync(500);
+		await vi.advanceTimersByTimeAsync(1200);
 
 		await expect(result).resolves.toBe("ok");
 		expect(request).toHaveBeenCalledTimes(2);

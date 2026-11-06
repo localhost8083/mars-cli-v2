@@ -353,7 +353,16 @@ describe("TypeSafe System One", () => {
 				signals.push(init.signal);
 				attempt++;
 				return attempt === 1
-					? new Response("retry", { status: 500, headers: { "retry-after-ms": "0" } })
+					? Response.json(
+							{
+								error: {
+									message: "Upstream connection failed before the request could be processed. Please retry.",
+									type: "server_error",
+									code: 502,
+								},
+							},
+							{ status: 502, headers: { "retry-after-ms": "0" } },
+						)
 					: Response.json({ answers: wireAnswers });
 			},
 		});

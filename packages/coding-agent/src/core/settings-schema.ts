@@ -44,7 +44,12 @@ const BranchSummarySettingsSchema = Type.Object({
 
 const ProviderRetrySettingsSchema = Type.Object({
 	timeoutMs: Type.Optional(Type.Number({ description: "SDK or provider request timeout in milliseconds." })),
-	maxRetries: Type.Optional(Type.Number({ description: "SDK or provider retry attempts." })),
+	maxRetries: Type.Optional(
+		Type.Number({
+			description: "Transport-level retry attempts for transient gateway failures.",
+			default: SETTINGS_DEFAULTS.retry.provider.maxRetries,
+		}),
+	),
 	maxRetryDelayMs: Type.Optional(
 		Type.Number({
 			description: "Maximum server-requested delay before failing.",

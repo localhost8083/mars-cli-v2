@@ -249,18 +249,35 @@ describe("OpenAI Decisions", () => {
 		expect(result.errorMessage).not.toContain("<html>");
 	});
 
-	it("still retries other server errors", async () => {
+	it("retries transient gateway server errors", async () => {
 		let attempt = 0;
 		const result = await classify(model, context, {
 			apiKey: "secret",
 			fetch: async () =>
 				++attempt === 1
-					? new Response("busy", { status: 503, headers: { "retry-after-ms": "0" } })
+					? Response.json(
+							{
+								error: {
+									message: "Upstream connection failed before the request could be processed. Please retry.",
+									type: "server_error",
+									code: 502,
+								},
+							},
+							{ status: 502, headers: { "retry-after-ms": "0" } },
+						)
 					: Response.json({ answers: wireAnswers }),
 		});
 
 		expect(attempt).toBe(2);
 		expect(result.stopReason).toBe("stop");
+	});
+
+	it("does not retry plain server errors", async () => {
+		const fetch = vi.fn(async () => new Response("busy", { status: 503, headers: { "retry-after-ms": "0" } }));
+		const result = await classify(model, context, { apiKey: "secret", fetch });
+
+		expect(fetch).toHaveBeenCalledOnce();
+		expect(result.stopReason).toBe("error");
 	});
 
 	it("includes the API error body for other HTTP failures", async () => {

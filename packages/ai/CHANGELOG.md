@@ -6,6 +6,7 @@
 
 - Anthropic requests with a `sessionId` (and `cacheRetention` not `"none"`) now use message threads (`message-threads-2026-08-12` beta): the server continues from the previous reply and pi sends only the new messages instead of the whole conversation. When anything earlier in the request changed, or the server can't continue the thread, the full request is sent. Token counts and prompt caching are unchanged. On by default only for the `anthropic` provider on `api.anthropic.com`; set `compat.supportsMessageThreads` to change that, for example for gateways that forward the `thread` field. Call `cleanupSessionResources(sessionId)` when a session ends to free the per-session state ([#11545](https://github.com/earendil-works/pi/pull/11545))
 - Added `StreamOptions.disableContinuation`, which keeps a request from using or replacing server-side continuation state such as Anthropic message threads. Set it on requests that repeat an earlier one, such as cache warming ([#11545](https://github.com/earendil-works/pi/pull/11545))
+- Transient gateway retries: 502/503/504/529 responses with a transient gateway body (Cloudflare error page or the gateway's exhausted-upstream `server_error` JSON) retry at the transport level with 1s/3s/8s backoff, honoring a body `retry_after` capped at 15 seconds. Model-upstream 5xx JSON errors (`Upstream error: ...`) and bare 4xx surface immediately; mid-stream failures never retry, and provider error messages unwrap gateway JSON to the readable `error.message` with a gateway-overloaded hint appended.
 
 ### Fixed
 

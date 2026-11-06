@@ -22,6 +22,11 @@ export const SETTINGS_DEFAULTS = {
 		maxAgentDelayMs: DEFAULT_MAX_AGENT_RETRY_DELAY_MS,
 		provider: {
 			maxRetryDelayMs: 60000,
+			// Transport-level retries for transient gateway failures (Cloudflare
+			// 502/503/504/529 pages and the gateway's exhausted-upstream
+			// server_error). Classification is body-aware; other 5xx and 4xx
+			// errors surface immediately.
+			maxRetries: 3,
 		},
 	},
 	hideThinkingBlock: false,

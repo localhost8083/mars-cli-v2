@@ -163,6 +163,9 @@ describe("inspectAddedModel", () => {
 		const directory = await agentDirWith({
 			providers: {
 				[PROVIDER]: {
+					// MarsAI-only fork: no built-in openai, so the models.json provider is fully specified.
+					api: "openai-completions",
+					baseUrl: "https://example.invalid/v1",
 					models: [
 						{
 							id: ADDED_MODEL.id,
@@ -177,30 +180,45 @@ describe("inspectAddedModel", () => {
 				},
 			},
 		});
-		await expect(inspectAddedModel(await loadConfiguredModelRuntime(directory), PROVIDER, MODEL_ID)).resolves.toEqual(
-			{
-				result: { model: ADDED_MODEL, existingModelsPreserved: true },
-			},
-		);
+		await expect(
+			inspectAddedModel(
+				await loadConfiguredModelRuntime(directory),
+				PROVIDER,
+				MODEL_ID,
+				join(directory, "models.json"),
+			),
+		).resolves.toEqual({
+			result: { model: ADDED_MODEL, existingModelsPreserved: true },
+		});
 	});
 
 	it("returns a structured error when the added model is missing", async () => {
 		const directory = await agentDirWith({ providers: {} });
-		await expect(inspectAddedModel(await loadConfiguredModelRuntime(directory), PROVIDER, MODEL_ID)).resolves.toEqual(
-			{
-				result: { error: `Model ${PROVIDER}/${MODEL_ID} is unavailable after reload.` },
-			},
-		);
+		await expect(
+			inspectAddedModel(
+				await loadConfiguredModelRuntime(directory),
+				PROVIDER,
+				MODEL_ID,
+				join(directory, "models.json"),
+			),
+		).resolves.toEqual({
+			result: { error: `Model ${PROVIDER}/${MODEL_ID} is unavailable after reload.` },
+		});
 	});
 
 	it("returns a structured error when models.json cannot be parsed", async () => {
 		const directory = await mkdtemp(join(tmpdir(), "pi-eval-provider-probe-"));
 		temporaryDirectories.push(directory);
 		await writeFile(join(directory, "models.json"), "{");
-		await expect(inspectAddedModel(await loadConfiguredModelRuntime(directory), PROVIDER, MODEL_ID)).resolves.toEqual(
-			{
-				result: { error: expect.stringContaining("Failed to parse models.json") },
-			},
-		);
+		await expect(
+			inspectAddedModel(
+				await loadConfiguredModelRuntime(directory),
+				PROVIDER,
+				MODEL_ID,
+				join(directory, "models.json"),
+			),
+		).resolves.toEqual({
+			result: { error: expect.stringContaining("Failed to parse models.json") },
+		});
 	});
 });

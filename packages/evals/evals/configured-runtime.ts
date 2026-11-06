@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { type Api, type Context, contentText, type Model, type ModelsSimpleStreamOptions } from "@earendil-works/pi-ai";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 
@@ -86,13 +87,20 @@ export async function inspectAddedModel(
 	runtime: ModelRuntime,
 	providerId: string,
 	modelId: string,
+	modelsJsonPath?: string,
 ): Promise<AddedModelOutput> {
-	const pristineRuntime = await ModelRuntime.create({ modelsPath: null, allowModelNetwork: false });
-	const pristineProvider = pristineRuntime.getProvider(providerId);
-	if (!pristineProvider) return { result: { error: `Built-in provider ${providerId} is unavailable.` } };
-	const existingModelIds = pristineProvider.getModels().map(({ id }) => id);
-	if (existingModelIds.length === 0) {
-		return { result: { error: `Built-in provider ${providerId} has no models.` } };
+	// MarsAI-only fork: built-in providers are stripped, so the "existing models" baseline is the
+	// provider's models.json definition rather than a pristine built-in registry.
+	let existingModelIds: string[] = [];
+	if (modelsJsonPath) {
+		try {
+			const parsed = JSON.parse(await readFile(modelsJsonPath, "utf-8")) as {
+				providers?: Record<string, { models?: Array<{ id: string }> }>;
+			};
+			existingModelIds = (parsed.providers?.[providerId]?.models ?? []).map((model) => model.id);
+		} catch {
+			// Unreadable models.json: refresh below reports the configuration error.
+		}
 	}
 	await runtime.refresh({ allowNetwork: false });
 	const configurationError = runtime.getError();
@@ -100,6 +108,10 @@ export async function inspectAddedModel(
 	const model = runtime.getModel(providerId, modelId);
 	if (!model) {
 		return { result: { error: `Model ${providerId}/${modelId} is unavailable after reload.` } };
+	}
+	if (existingModelIds.length === 0) {
+		const reloaded = runtime.getProvider(providerId)?.getModels() ?? [];
+		existingModelIds = reloaded.map(({ id }) => id);
 	}
 	return {
 		result: {

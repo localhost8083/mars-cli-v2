@@ -365,6 +365,7 @@ async function commitOutcome(storage: Storage, batches: readonly (readonly Stora
 
 describe("SqliteStorage batch commits against the memory reference", () => {
 	for (const seed of [1, 2, 3, 4, 5, 6]) {
+		// 120 rounds of random batches plus full-table snapshots run past vitest's 5s default on CI.
 		it(`agrees with MemoryStorage on random batch calls (seed ${seed})`, async () => {
 			const rng = random(seed);
 			const reference = new MemoryStorage();
@@ -423,7 +424,7 @@ describe("SqliteStorage batch commits against the memory reference", () => {
 			expect(refusals).toBeGreaterThan(10);
 			expect(prefixes).toBeGreaterThan(10);
 			expect(groups).toBeGreaterThan(10);
-		});
+		}, 120_000);
 	}
 });
 

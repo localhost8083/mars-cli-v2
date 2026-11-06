@@ -454,7 +454,7 @@ await models.completeSimple(model, context, { identity: { attribution: null } })
   - NVIDIA NIM: `X-BILLING-INVOKE-ORIGIN: <name>` with its first letter upper-cased.
   - OpenCode: `x-opencode-client: <name>`.
 
-  `PI_ATTRIBUTION` is mars's: `{ name: "mars", url: "https://pi.dev", categories: ["cli-agent"] }`.
+  `MARS_ATTRIBUTION` is mars's: `{ name: "mars", url: "https://pi.dev", categories: ["cli-agent"] }`.
 
 Identity headers are defaults below provider, model, and request headers, so configured headers win and a `null` request header removes one. Providers that send a fixed client identity, such as GitHub Copilot and Anthropic OAuth, keep it. `withClientIdentity(models, identity)` returns a wrapper of a `Models` (or `MutableModels`) whose requests use `identity` over the one the `Models` was created with, for libraries that receive a `Models` from their host. `identity` is plain JSON, so it can be persisted with other request options.
 
@@ -1773,7 +1773,7 @@ That explicit override bundles the AWS SDK. Without it, Bedrock's opaque runtime
 
 ### Provider-Scoped Environment Overrides
 
-Pass `env` in stream options to scope provider configuration to a request. Values in `env` are used before process environment variables for provider auth and configuration such as Cloudflare account IDs, Azure OpenAI settings, Vertex project/location, Bedrock settings, `PI_CACHE_RETENTION`, and `HTTP_PROXY`/`HTTPS_PROXY`.
+Pass `env` in stream options to scope provider configuration to a request. Values in `env` are used before process environment variables for provider auth and configuration such as Cloudflare account IDs, Azure OpenAI settings, Vertex project/location, Bedrock settings, `MARS_CACHE_RETENTION`, and `HTTP_PROXY`/`HTTPS_PROXY`.
 
 ```typescript
 const models = builtinModels();

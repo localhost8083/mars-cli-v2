@@ -59,7 +59,7 @@ Next after that: i18n build, telemetry (slice 9), small examples; p3 work packag
   REDO the final commit with hooks, amend message), rebased on upstream/main (no conflicts), slices.md carry-over
   cleaned and "What exists" gained 11-13, package-lock regenerated with npm 11.21.1 (`/tmp/npmlatest`, the repo's
   lock needs a newer npm than node 24's 11.4.2) and left unstaged; `npm run check` clean; full Chord tests running
-  (`/tmp/s11-final-tests.log`). Then: commit (amend, PI_ALLOW_LOCKFILE_CHANGE=1 with package-lock.json), push
+  (`/tmp/s11-final-tests.log`). Then: commit (amend, MARS_ALLOW_LOCKFILE_CHANGE=1 with package-lock.json), push
   upstream, CI, merge into private.
 - `chord-root` subagent (Opus) in `/home/badlogic/pi-chord-root` (worktree of origin/private): trial of making Chord v2
   the package root, old v1 to `src/old` or p2 (Durable and env import the root too), as a re-runnable script

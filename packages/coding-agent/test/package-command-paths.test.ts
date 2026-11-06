@@ -89,9 +89,9 @@ if (process.platform !== "win32") fs.chmodSync(piPath, 0o755);
 		);
 		chmodSync(npmPath, 0o755);
 
-		vi.stubEnv("PI_INSTALLER_API_BASE", "https://example.test/api/installer/releases");
-		vi.stubEnv("PI_MANAGED_INSTALL_ROOT", managedRoot);
-		process.env.PI_PACKAGE_DIR = selfPackageDir;
+		vi.stubEnv("MARS_INSTALLER_API_BASE", "https://example.test/api/installer/releases");
+		vi.stubEnv("MARS_MANAGED_INSTALL_ROOT", managedRoot);
+		process.env.MARS_PACKAGE_DIR = selfPackageDir;
 		process.env.PATH = `${binDir}${delimiter}${originalPath ?? ""}`;
 		return { managedRoot, npmRecordPath };
 	}
@@ -147,7 +147,7 @@ if (process.platform !== "win32") fs.chmodSync(piPath, 0o755);
 
 		originalCwd = process.cwd();
 		originalAgentDir = process.env[ENV_AGENT_DIR];
-		originalPiPackageDir = process.env.PI_PACKAGE_DIR;
+		originalPiPackageDir = process.env.MARS_PACKAGE_DIR;
 		originalPath = process.env.PATH;
 		originalExitCode = process.exitCode;
 		originalExecPath = process.execPath;
@@ -179,9 +179,9 @@ if (process.platform !== "win32") fs.chmodSync(piPath, 0o755);
 			process.env[ENV_AGENT_DIR] = originalAgentDir;
 		}
 		if (originalPiPackageDir === undefined) {
-			delete process.env.PI_PACKAGE_DIR;
+			delete process.env.MARS_PACKAGE_DIR;
 		} else {
-			process.env.PI_PACKAGE_DIR = originalPiPackageDir;
+			process.env.MARS_PACKAGE_DIR = originalPiPackageDir;
 		}
 		if (originalPath === undefined) {
 			delete process.env.PATH;
@@ -415,8 +415,8 @@ if (process.platform !== "win32") fs.chmodSync(piPath, 0o755);
 	it("does not report packages as up to date in offline mode", async () => {
 		prepareStaleNpmPackage("1.2.0", "1.3.0");
 		// main() writes both variables in offline mode; stubbing them lets afterEach restore them.
-		vi.stubEnv("PI_OFFLINE", "1");
-		vi.stubEnv("PI_SKIP_VERSION_CHECK", "1");
+		vi.stubEnv("MARS_OFFLINE", "1");
+		vi.stubEnv("MARS_SKIP_VERSION_CHECK", "1");
 		const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
 		await expect(main(["update", "--extensions"])).resolves.toBeUndefined();
@@ -681,8 +681,8 @@ if (process.platform !== "win32") fs.chmodSync(piPath, 0o755);
 	});
 
 	it("allows explicit self-update checks when automatic version checks are disabled", async () => {
-		const previousSkipVersionCheck = process.env.PI_SKIP_VERSION_CHECK;
-		process.env.PI_SKIP_VERSION_CHECK = "1";
+		const previousSkipVersionCheck = process.env.MARS_SKIP_VERSION_CHECK;
+		process.env.MARS_SKIP_VERSION_CHECK = "1";
 		const fetchMock = vi.fn(async () => Response.json({ version: VERSION }));
 		vi.stubGlobal("fetch", fetchMock);
 		const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
@@ -699,16 +699,16 @@ if (process.platform !== "win32") fs.chmodSync(piPath, 0o755);
 			expect(process.exitCode).toBeUndefined();
 		} finally {
 			if (previousSkipVersionCheck === undefined) {
-				delete process.env.PI_SKIP_VERSION_CHECK;
+				delete process.env.MARS_SKIP_VERSION_CHECK;
 			} else {
-				process.env.PI_SKIP_VERSION_CHECK = previousSkipVersionCheck;
+				process.env.MARS_SKIP_VERSION_CHECK = previousSkipVersionCheck;
 			}
 		}
 	});
 
 	it("retries a transient self-update version check", async () => {
-		const previousSkipVersionCheck = process.env.PI_SKIP_VERSION_CHECK;
-		delete process.env.PI_SKIP_VERSION_CHECK;
+		const previousSkipVersionCheck = process.env.MARS_SKIP_VERSION_CHECK;
+		delete process.env.MARS_SKIP_VERSION_CHECK;
 		const fetchMock = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("fetch failed"))
@@ -723,8 +723,8 @@ if (process.platform !== "win32") fs.chmodSync(piPath, 0o755);
 			expect(fetchMock).toHaveBeenCalledTimes(3);
 			expect(errorSpy).not.toHaveBeenCalled();
 		} finally {
-			if (previousSkipVersionCheck === undefined) delete process.env.PI_SKIP_VERSION_CHECK;
-			else process.env.PI_SKIP_VERSION_CHECK = previousSkipVersionCheck;
+			if (previousSkipVersionCheck === undefined) delete process.env.MARS_SKIP_VERSION_CHECK;
+			else process.env.MARS_SKIP_VERSION_CHECK = previousSkipVersionCheck;
 			logSpy.mockRestore();
 			errorSpy.mockRestore();
 		}
@@ -869,7 +869,7 @@ process.exit(${exitCode});
 		return { scriptPath, recordPath };
 	}
 
-	it("runs PI_SELF_UPDATE_COMMAND instead of the managed update and the selfUpdateCommand setting", async () => {
+	it("runs MARS_SELF_UPDATE_COMMAND instead of the managed update and the selfUpdateCommand setting", async () => {
 		const targetVersion = getNewerPatchVersion();
 		const { npmRecordPath } = prepareManagedInstall(targetVersion);
 		const { scriptPath, recordPath } = prepareSelfUpdateCommand(targetVersion);
@@ -878,7 +878,7 @@ process.exit(${exitCode});
 			join(agentDir, "settings.json"),
 			JSON.stringify({ selfUpdateCommand: [originalExecPath, scriptPath, settingRecordPath] }),
 		);
-		vi.stubEnv("PI_SELF_UPDATE_COMMAND", "pi-wrapper upgrade {installSpec} {version}");
+		vi.stubEnv("MARS_SELF_UPDATE_COMMAND", "pi-wrapper upgrade {installSpec} {version}");
 		vi.stubGlobal(
 			"fetch",
 			vi.fn(async () => Response.json({ packageName: "@new-scope/pi", version: targetVersion, note: "Read me" })),
@@ -915,7 +915,7 @@ process.exit(${exitCode});
 			join(projectDir, ".mars", "settings.json"),
 			JSON.stringify({ selfUpdateCommand: [originalExecPath, scriptPath, projectRecordPath] }),
 		);
-		vi.stubEnv("PI_SELF_UPDATE_COMMAND", "");
+		vi.stubEnv("MARS_SELF_UPDATE_COMMAND", "");
 		const fetchMock = vi.fn(async () => Response.json({ version: VERSION }));
 		vi.stubGlobal("fetch", fetchMock);
 		const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
@@ -936,7 +936,7 @@ process.exit(${exitCode});
 	it("warns when the pi on PATH does not report the new version", async () => {
 		const targetVersion = getNewerPatchVersion();
 		prepareSelfUpdateCommand(VERSION);
-		vi.stubEnv("PI_SELF_UPDATE_COMMAND", "pi-wrapper upgrade");
+		vi.stubEnv("MARS_SELF_UPDATE_COMMAND", "pi-wrapper upgrade");
 		vi.stubGlobal(
 			"fetch",
 			vi.fn(async () => Response.json({ version: targetVersion })),
@@ -955,7 +955,7 @@ process.exit(${exitCode});
 
 	it("fails when the configured self-update command fails", async () => {
 		prepareSelfUpdateCommand(VERSION, 23);
-		vi.stubEnv("PI_SELF_UPDATE_COMMAND", "pi-wrapper upgrade");
+		vi.stubEnv("MARS_SELF_UPDATE_COMMAND", "pi-wrapper upgrade");
 		vi.stubGlobal(
 			"fetch",
 			vi.fn(async () => Response.json({ version: getNewerPatchVersion() })),
@@ -1003,7 +1003,7 @@ process.exit(${exitCode});
 			join(inheritedManagedRoot, "managed-install.json"),
 			JSON.stringify({ kind: "pi-managed-install", schemaVersion: 1, layout: "releases-v1" }),
 		);
-		vi.stubEnv("PI_MANAGED_INSTALL_ROOT", inheritedManagedRoot);
+		vi.stubEnv("MARS_MANAGED_INSTALL_ROOT", inheritedManagedRoot);
 		const fakeNpmPath = join(tempDir, "fake-npm.cjs");
 		const recordPath = join(tempDir, "self-update.json");
 		mkdirSync(selfPackageDir, { recursive: true });
@@ -1023,7 +1023,7 @@ else fs.writeFileSync(${JSON.stringify(recordPath)},JSON.stringify(args));
 			join(projectDir, ".mars", "settings.json"),
 			JSON.stringify({ npmCommand: [originalExecPath, fakeNpmPath, "--prefix", projectPrefix] }, null, 2),
 		);
-		process.env.PI_PACKAGE_DIR = selfPackageDir;
+		process.env.MARS_PACKAGE_DIR = selfPackageDir;
 		Object.defineProperty(process, "execPath", {
 			value: join(selfPackageDir, "dist", "cli.js"),
 			configurable: true,
@@ -1077,7 +1077,7 @@ else fs.writeFileSync(${JSON.stringify(recordPath)},JSON.stringify(args));
 			join(agentDir, "settings.json"),
 			JSON.stringify({ npmCommand: [originalExecPath, fakeNpmPath, "--prefix", globalPrefix] }, null, 2),
 		);
-		process.env.PI_PACKAGE_DIR = selfPackageDir;
+		process.env.MARS_PACKAGE_DIR = selfPackageDir;
 		Object.defineProperty(process, "execPath", {
 			value: join(selfPackageDir, "dist", "cli.js"),
 			configurable: true,
@@ -1134,7 +1134,7 @@ else {
 			join(agentDir, "settings.json"),
 			JSON.stringify({ npmCommand: [originalExecPath, fakeNpmPath, "--prefix", globalPrefix] }, null, 2),
 		);
-		process.env.PI_PACKAGE_DIR = selfPackageDir;
+		process.env.MARS_PACKAGE_DIR = selfPackageDir;
 		Object.defineProperty(process, "execPath", {
 			value: join(selfPackageDir, "dist", "cli.js"),
 			configurable: true,
@@ -1188,7 +1188,7 @@ else {
 		writeFileSync(fakePnpmPath, fakePnpmScript);
 		chmodSync(fakePnpmPath, 0o755);
 		process.env.PATH = `${fakeBinDir}${process.env.PATH ? `${delimiter}${process.env.PATH}` : ""}`;
-		process.env.PI_PACKAGE_DIR = selfPackageDir;
+		process.env.MARS_PACKAGE_DIR = selfPackageDir;
 		Object.defineProperty(process, "execPath", {
 			value: join(tempDir, "pnpm", "bin", "node"),
 			configurable: true,
@@ -1240,7 +1240,7 @@ if(args.includes("install")) process.exit(23);
 			join(agentDir, "settings.json"),
 			JSON.stringify({ npmCommand: [originalExecPath, fakeNpmPath, "--prefix", globalPrefix] }, null, 2),
 		);
-		process.env.PI_PACKAGE_DIR = selfPackageDir;
+		process.env.MARS_PACKAGE_DIR = selfPackageDir;
 		Object.defineProperty(process, "execPath", {
 			value: join(selfPackageDir, "dist", "cli.js"),
 			configurable: true,

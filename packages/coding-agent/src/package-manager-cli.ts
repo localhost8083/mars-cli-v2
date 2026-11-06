@@ -56,7 +56,7 @@ const MANAGED_INSTALL_MARKER = "managed-install.json";
 const MANAGED_RELEASE_VERSION_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 function getActiveManagedInstallRoot(): string | undefined {
-	const configuredRoot = process.env.PI_MANAGED_INSTALL_ROOT?.trim();
+	const configuredRoot = process.env.MARS_MANAGED_INSTALL_ROOT?.trim();
 	if (!configuredRoot) return undefined;
 
 	const managedRoot = resolve(configuredRoot);
@@ -211,7 +211,7 @@ async function runManagedSelfUpdate(managedRoot: string, version: string): Promi
 	let stageDir: string | undefined;
 	try {
 		cleanupManagedStaging(managedRoot);
-		const installerApiBase = (process.env.PI_INSTALLER_API_BASE?.trim() || DEFAULT_INSTALLER_API_BASE).replace(
+		const installerApiBase = (process.env.MARS_INSTALLER_API_BASE?.trim() || DEFAULT_INSTALLER_API_BASE).replace(
 			/\/+$/,
 			"",
 		);
@@ -642,7 +642,7 @@ function printSelfUpdateUnavailable(
 	console.error(`error: ${APP_NAME} cannot self-update this installation.`);
 	console.error(getSelfUpdateUnavailableInstruction(PACKAGE_NAME, npmCommand, updatePackageTarget));
 	console.error(
-		`To make \`${APP_NAME} update\` run your own update command, set PI_SELF_UPDATE_COMMAND or the selfUpdateCommand setting.`,
+		`To make \`${APP_NAME} update\` run your own update command, set MARS_SELF_UPDATE_COMMAND or the selfUpdateCommand setting.`,
 	);
 
 	const entrypoint = process.argv[1];
@@ -775,8 +775,8 @@ async function runConfiguredSelfUpdate(argv: string[], plan: SelfUpdatePlan): Pr
 
 /** Version printed by `pi --version` as resolved from PATH, the pi the user runs next. */
 function readVersionOnPath(): string | undefined {
-	// PI_PACKAGE_DIR points at this installation and would make the new pi report the old version.
-	const { PI_PACKAGE_DIR: _, ...env } = process.env;
+	// MARS_PACKAGE_DIR points at this installation and would make the new pi report the old version.
+	const { MARS_PACKAGE_DIR: _, ...env } = process.env;
 	const result = spawnProcessSync(APP_NAME, ["--version"], {
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],

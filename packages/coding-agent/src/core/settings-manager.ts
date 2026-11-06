@@ -1240,7 +1240,7 @@ export class SettingsManager {
 		if (this.settings.terminal?.clearOnShrink !== undefined) {
 			return this.settings.terminal.clearOnShrink;
 		}
-		if (process.env.PI_CLEAR_ON_SHRINK === "1") return true;
+		if (process.env.MARS_CLEAR_ON_SHRINK === "1") return true;
 		return SETTINGS_DEFAULTS.terminal.clearOnShrink;
 	}
 
@@ -1389,7 +1389,7 @@ export class SettingsManager {
 	}
 
 	getShowHardwareCursor(): boolean {
-		return this.settings.showHardwareCursor ?? process.env.PI_HARDWARE_CURSOR === "1";
+		return this.settings.showHardwareCursor ?? process.env.MARS_HARDWARE_CURSOR === "1";
 	}
 
 	setShowHardwareCursor(enabled: boolean): void {

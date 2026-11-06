@@ -1200,7 +1200,7 @@ export class InteractiveMode {
 	async run(): Promise<void> {
 		await this.init();
 
-		if (!process.env.PI_OFFLINE) {
+		if (!process.env.MARS_OFFLINE) {
 			const controller = new AbortController();
 			const timeout = setTimeout(() => controller.abort(), 15_000);
 			void refreshModelCatalogs(this.session.modelRuntime, controller.signal)
@@ -1272,7 +1272,7 @@ export class InteractiveMode {
 		// opens the browser itself once the code arrives. The "no models" warning is
 		// redundant on that path — the login is the fix.
 		const autoLoginMars =
-			!process.env.PI_OFFLINE &&
+			!process.env.MARS_OFFLINE &&
 			!initialMessage &&
 			!initialMessages?.length &&
 			!this.session.modelRuntime.getProviderAuthStatus("marsai").configured &&
@@ -1330,7 +1330,7 @@ export class InteractiveMode {
 	}
 
 	private async checkForPackageUpdates(): Promise<string[]> {
-		if (process.env.PI_OFFLINE) {
+		if (process.env.MARS_OFFLINE) {
 			return [];
 		}
 

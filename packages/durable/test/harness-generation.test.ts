@@ -1,9 +1,9 @@
 import {
 	type AssistantMessage,
 	fauxAssistantMessage,
+	MARS_ATTRIBUTION,
 	type Message,
 	type Models,
-	PI_ATTRIBUTION,
 	type SimpleStreamOptions,
 	type SystemMessage,
 } from "@earendil-works/pi-ai";
@@ -450,7 +450,7 @@ describe("generation", () => {
 			await (await root.submit({ type: "input", content: "hi" }, context)).wait(context);
 			await harness.close(context);
 		}
-		expect(seen).toEqual([{ attribution: PI_ATTRIBUTION }, { attribution: acme, userAgent: "short" }]);
+		expect(seen).toEqual([{ attribution: MARS_ATTRIBUTION }, { attribution: acme, userAgent: "short" }]);
 	});
 
 	// Regression coverage for #10424.

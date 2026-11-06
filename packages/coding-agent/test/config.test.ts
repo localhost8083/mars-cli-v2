@@ -15,7 +15,7 @@ import {
 
 const execPathDescriptor = Object.getOwnPropertyDescriptor(process, "execPath");
 const originalPath = process.env.PATH;
-const originalPiPackageDir = process.env.PI_PACKAGE_DIR;
+const originalPiPackageDir = process.env.MARS_PACKAGE_DIR;
 const originalArgv1 = process.argv[1];
 let tempDir: string | undefined;
 
@@ -36,9 +36,9 @@ afterEach(() => {
 		process.env.PATH = originalPath;
 	}
 	if (originalPiPackageDir === undefined) {
-		delete process.env.PI_PACKAGE_DIR;
+		delete process.env.MARS_PACKAGE_DIR;
 	} else {
-		process.env.PI_PACKAGE_DIR = originalPiPackageDir;
+		process.env.MARS_PACKAGE_DIR = originalPiPackageDir;
 	}
 	if (originalArgv1 === undefined) {
 		process.argv.splice(1, 1);
@@ -59,7 +59,7 @@ function createNpmPrefixInstall(template = "pi-prefix-"): { prefix: string; pack
 	const packageDir = join(scopeDir, "pi-coding-agent");
 	mkdirSync(packageDir, { recursive: true });
 	tempDir = prefix;
-	process.env.PI_PACKAGE_DIR = packageDir;
+	process.env.MARS_PACKAGE_DIR = packageDir;
 	setExecPath(join(packageDir, "dist", "cli.js"));
 	return { prefix, packageDir };
 }
@@ -75,7 +75,7 @@ function createPnpmGlobalInstall(): { root: string; packageDir: string } {
 	chmodSync(join(binDir, process.platform === "win32" ? "pnpm.cmd" : "pnpm"), 0o755);
 	tempDir = temp;
 	process.env.PATH = `${binDir}${delimiter}${originalPath ?? ""}`;
-	process.env.PI_PACKAGE_DIR = packageDir;
+	process.env.MARS_PACKAGE_DIR = packageDir;
 	setExecPath(
 		join(
 			root,
@@ -102,7 +102,7 @@ function createYarnGlobalInstall(): { globalDir: string; packageDir: string } {
 	chmodSync(join(binDir, process.platform === "win32" ? "yarn.cmd" : "yarn"), 0o755);
 	tempDir = temp;
 	process.env.PATH = `${binDir}${delimiter}${originalPath ?? ""}`;
-	process.env.PI_PACKAGE_DIR = packageDir;
+	process.env.MARS_PACKAGE_DIR = packageDir;
 	setExecPath(join(globalDir, ".yarn", "@mariozechner", "pi-coding-agent", "dist", "cli.js"));
 	return { globalDir, packageDir };
 }
@@ -120,14 +120,16 @@ function createBunGlobalInstall(): { packageDir: string } {
 	chmodSync(join(bunBin, process.platform === "win32" ? "bun.cmd" : "bun"), 0o755);
 	tempDir = temp;
 	process.env.PATH = `${bunBin}${delimiter}${originalPath ?? ""}`;
-	process.env.PI_PACKAGE_DIR = packageDir;
+	process.env.MARS_PACKAGE_DIR = packageDir;
 	setExecPath(join(packageDir, "dist", "cli.js"));
 	return { packageDir };
 }
 
 function createFakePnpmScript(root: string): string {
 	if (process.platform === "win32") {
-		return `@echo off\r\nif "%1"=="root" if "%2"=="-g" echo ${root}\r\n`;
+		// cross-spawn invokes .cmd files through `cmd /d /s /c`, which strips only the
+		// outer quotes, so %1 arrives as `"root"` including quotes; %~ strips them.
+		return `@echo off\r\nif "%~1"=="root" if "%~2"=="-g" echo ${root}\r\n`;
 	}
 	const escapedRoot = root.replaceAll("'", "'\\''");
 	return `#!/bin/sh\nif [ "$1" = "root" ] && [ "$2" = "-g" ]; then\n\tprintf '%s\\n' '${escapedRoot}'\n\texit 0\nfi\nexit 1\n`;
@@ -135,7 +137,7 @@ function createFakePnpmScript(root: string): string {
 
 function createFakeYarnScript(globalDir: string): string {
 	if (process.platform === "win32") {
-		return `@echo off\r\nif "%1"=="global" if "%2"=="dir" echo ${globalDir}\r\n`;
+		return `@echo off\r\nif "%~1"=="global" if "%~2"=="dir" echo ${globalDir}\r\n`;
 	}
 	const escapedGlobalDir = globalDir.replaceAll("'", "'\\''");
 	return `#!/bin/sh\nif [ "$1" = "global" ] && [ "$2" = "dir" ]; then\n\tprintf '%s\\n' '${escapedGlobalDir}'\n\texit 0\nfi\nexit 1\n`;
@@ -143,7 +145,7 @@ function createFakeYarnScript(globalDir: string): string {
 
 function createFakeBunScript(bunBin: string): string {
 	if (process.platform === "win32") {
-		return `@echo off\r\nif "%1"=="pm" if "%2"=="bin" if "%3"=="-g" echo ${bunBin}\r\n`;
+		return `@echo off\r\nif "%~1"=="pm" if "%~2"=="bin" if "%~3"=="-g" echo ${bunBin}\r\n`;
 	}
 	const escapedBunBin = bunBin.replaceAll("'", "'\\''");
 	return `#!/bin/sh\nif [ "$1" = "pm" ] && [ "$2" = "bin" ] && [ "$3" = "-g" ]; then\n\tprintf '%s\\n' '${escapedBunBin}'\n\texit 0\nfi\nexit 1\n`;
@@ -199,7 +201,7 @@ describe("detectInstallMethod", () => {
 			"pi-coding-agent",
 		);
 		mkdirSync(packageDir, { recursive: true });
-		process.env.PI_PACKAGE_DIR = packageDir;
+		process.env.MARS_PACKAGE_DIR = packageDir;
 		process.env.PATH = "";
 		process.argv[1] = join(packageDir, "dist", "cli.js");
 		setExecPath(join(packageDir, "dist", "cli.js"));
@@ -279,7 +281,9 @@ describe("detectInstallMethod", () => {
 		});
 	});
 
-	test("self-update respects configured npmCommand", () => {
+	// Windows `npm --prefix X root -g` prints X\node_modules while this helper models
+	// the Unix global layout (X\lib\node_modules), so the managed-install check cannot match.
+	test.skipIf(process.platform === "win32")("self-update respects configured npmCommand", () => {
 		const { prefix } = createNpmPrefixInstall();
 
 		const command = getSelfUpdateCommand("@earendil-works/pi-coding-agent", ["npm", "--prefix", prefix]);
@@ -327,7 +331,7 @@ describe("detectInstallMethod", () => {
 
 	test("does not infer Windows npm custom prefixes from package paths", () => {
 		const packageDir = "C:\\Users\\Admin\\npm prefix\\node_modules\\@earendil-works\\pi-coding-agent";
-		process.env.PI_PACKAGE_DIR = packageDir;
+		process.env.MARS_PACKAGE_DIR = packageDir;
 		setExecPath(`${packageDir}\\dist\\cli.js`);
 
 		expect(detectInstallMethod()).toBe("npm");
@@ -404,7 +408,7 @@ describe("detectInstallMethod", () => {
 		chmodSync(join(binDir, process.platform === "win32" ? "pnpm.cmd" : "pnpm"), 0o755);
 		tempDir = temp;
 		process.env.PATH = `${binDir}${delimiter}${originalPath ?? ""}`;
-		process.env.PI_PACKAGE_DIR = storePackageDir;
+		process.env.MARS_PACKAGE_DIR = storePackageDir;
 		process.argv[1] = join(globalPackageDir, "dist", "cli.js");
 		setExecPath(join(storePackageDir, "dist", "cli.js"));
 
@@ -469,7 +473,9 @@ describe("detectInstallMethod", () => {
 		});
 	});
 
-	test("does not self-update when npm install path is not writable", () => {
+	// Windows ignores the read-only bit on directories, so chmod 0o500 cannot make
+	// the install path unwritable there.
+	test.skipIf(process.platform === "win32")("does not self-update when npm install path is not writable", () => {
 		const { packageDir } = createNpmPrefixInstall();
 		chmodSync(packageDir, 0o500);
 
@@ -493,24 +499,24 @@ describe("detectInstallChange", () => {
 });
 
 describe("configured self-update command", () => {
-	const originalSelfUpdateCommand = process.env.PI_SELF_UPDATE_COMMAND;
+	const originalSelfUpdateCommand = process.env.MARS_SELF_UPDATE_COMMAND;
 
 	afterEach(() => {
 		if (originalSelfUpdateCommand === undefined) {
-			delete process.env.PI_SELF_UPDATE_COMMAND;
+			delete process.env.MARS_SELF_UPDATE_COMMAND;
 		} else {
-			process.env.PI_SELF_UPDATE_COMMAND = originalSelfUpdateCommand;
+			process.env.MARS_SELF_UPDATE_COMMAND = originalSelfUpdateCommand;
 		}
 	});
 
-	test("prefers PI_SELF_UPDATE_COMMAND over the setting and splits it on whitespace", () => {
-		process.env.PI_SELF_UPDATE_COMMAND = "  nub   upgrade {installSpec} ";
+	test("prefers MARS_SELF_UPDATE_COMMAND over the setting and splits it on whitespace", () => {
+		process.env.MARS_SELF_UPDATE_COMMAND = "  nub   upgrade {installSpec} ";
 
 		expect(getConfiguredSelfUpdateArgv(["mise", "upgrade"])).toEqual(["nub", "upgrade", "{installSpec}"]);
 	});
 
-	test("uses the setting when PI_SELF_UPDATE_COMMAND is unset or blank", () => {
-		process.env.PI_SELF_UPDATE_COMMAND = " ";
+	test("uses the setting when MARS_SELF_UPDATE_COMMAND is unset or blank", () => {
+		process.env.MARS_SELF_UPDATE_COMMAND = " ";
 
 		expect(getConfiguredSelfUpdateArgv(["mise", "upgrade", "npm:{packageName}"])).toEqual([
 			"mise",

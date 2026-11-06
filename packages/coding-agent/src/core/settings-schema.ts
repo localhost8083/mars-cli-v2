@@ -287,7 +287,7 @@ export const SettingsSchema = Type.Object(
 		selfUpdateCommand: Type.Optional(
 			Type.Array(Type.String(), {
 				minItems: 1,
-				description: `Command \`${APP_NAME} update\` runs to update the app itself, in argv form such as ["mise", "use", "-g", "npm:{packageName}@{version}"]. Placeholders: {packageName}, {version}, {installSpec}. PI_SELF_UPDATE_COMMAND takes precedence. Global setting only.`,
+				description: `Command \`${APP_NAME} update\` runs to update the app itself, in argv form such as ["mise", "use", "-g", "npm:{packageName}@{version}"]. Placeholders: {packageName}, {version}, {installSpec}. MARS_SELF_UPDATE_COMMAND takes precedence. Global setting only.`,
 			}),
 		),
 		collapseChangelog: Type.Optional(

@@ -426,7 +426,7 @@ Not MCP work, done. Before WP6:
 2. WP1-3 (and 4) are in the tree p2 builds against.
 3. Add `"@earendil-works/pi-mcp": "<current version>"` and `"@earendil-works/pi-env"` (if p2 does not have it yet) to
    `apps/p2/package.json`; refresh the lockfile with `npm install --package-lock-only --ignore-scripts`; commit lockfile
-   changes with `PI_ALLOW_LOCKFILE_CHANGE=1`.
+   changes with `MARS_ALLOW_LOCKFILE_CHANGE=1`.
 
 ---
 

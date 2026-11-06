@@ -138,7 +138,7 @@ it("takes the default model from P2_PROVIDER/P2_MODEL (or Pi Mobile's names) aft
 		provider: "faux",
 		modelId: "faux-1",
 	});
-	assert.deepEqual(envDefaultModel({ PI_MOBILE_PROVIDER: "a", PI_MOBILE_MODEL: "b" }), {
+	assert.deepEqual(envDefaultModel({ MARS_MOBILE_PROVIDER: "a", MARS_MOBILE_MODEL: "b" }), {
 		provider: "a",
 		modelId: "b",
 	});

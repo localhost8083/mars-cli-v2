@@ -240,9 +240,9 @@ export async function writeRadiusConfig(directory: string, config: RadiusBrainCo
 	await rename(`${path}.tmp`, path);
 }
 
-/** Gateway for new logins: `PI_RADIUS_GATEWAY`, as in the coding agent, else production. */
+/** Gateway for new logins: `MARS_RADIUS_GATEWAY`, as in the coding agent, else production. */
 export function radiusGatewayFromEnv(): string {
-	return normalizeRadiusGatewayUrl(process.env.PI_RADIUS_GATEWAY ?? DEFAULT_RADIUS_GATEWAY);
+	return normalizeRadiusGatewayUrl(process.env.MARS_RADIUS_GATEWAY ?? DEFAULT_RADIUS_GATEWAY);
 }
 
 export function newServerId(): string {

@@ -118,8 +118,8 @@ describe("openProcess", () => {
 		const stdout = collector();
 		const program = await openProcess(connection, {
 			cwd,
-			argv: node("process.stdout.write(JSON.stringify([process.cwd(), process.env.PI_ENV_PROCESS_TEST]))"),
-			env: { PI_ENV_PROCESS_TEST: "set" },
+			argv: node("process.stdout.write(JSON.stringify([process.cwd(), process.env.MARS_ENV_PROCESS_TEST]))"),
+			env: { MARS_ENV_PROCESS_TEST: "set" },
 			onStdout: stdout.onData,
 		});
 		expect(await program.exited).toBe(0);

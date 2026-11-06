@@ -31,9 +31,9 @@ P2_FAKE=1 npm start          # http://127.0.0.1:8788, data in ~/.mars/p2
 | `PORT` | `8788` | listen port (loopback only), so p2 never collides with pi-mobile on 8787 |
 | `P2_FAKE` | unset | `1`: the faux provider (`faux/faux-1`, echoes the prompt; `slow …` streams long; `rename-session <title>` calls the tool; `subagent`, `subagent-bad`, `subagent-answer`, `subagent-configure`, `subagent-send`, `subagent-archive`, `subagent-status` exercise subagents, `subagent <json>` calls the tool with those arguments, as do `team <json>`, `history_search|read|handoff <json>`, `location_envs|dirs|move <json>`, `tool_search <json>`, `terminal <json>` and `mcp__<server>__<tool> <json>`; `codemode` runs a script calling bash and read, `codemode-restart` one whose slow middle call a restart interrupts, `codemode <script>` runs that script; `artifact <json>` calls the artifact tool with those arguments; `json <text>` answers exactly `<text>`; a one-shot agent whose task is not `json …`/`slow…` answers a small value matching its schema) |
 | `P2_IDLE_MS` | `300000` | idle time before a session worker stops |
-| `P2_PROVIDER`, `P2_MODEL` | unset | default model for new sessions after settings.json's `defaultModel` (both or neither; Mars Mobile's `PI_MOBILE_PROVIDER`/`PI_MOBILE_MODEL` work too) |
+| `P2_PROVIDER`, `P2_MODEL` | unset | default model for new sessions after settings.json's `defaultModel` (both or neither; Mars Mobile's `MARS_MOBILE_PROVIDER`/`MARS_MOBILE_MODEL` work too) |
 | `P2_RADIUS` | unset | `0`: disable the outbound Radius brain connection even when signed in |
-| `PI_RADIUS_GATEWAY` | production Radius | gateway selected by `npm run radius:login` |
+| `MARS_RADIUS_GATEWAY` | production Radius | gateway selected by `npm run radius:login` |
 | `P2_TERMINAL_DAEMON` | unset | optional local pi-env daemon binary; otherwise use packages/env release/development builds |
 
 - **Web UI:** `buildWebBundle` (`src/hosts/bundles.ts`) bundles `src/hosts/web/main.tsx` with the selected plugins'
@@ -180,7 +180,7 @@ appear in shell history/process listings. Only the cookie is saved per origin in
 (0600, directory 0700); the consumed invitation is never saved. Local configuration stores only cookies;
 `P2_TUI_CONFIG_DIR` isolates tests. No provider credentials are read by the launcher. Keybindings, theme and display
 settings are the visitor's (p2-tui-port.md 4.3): the launcher reads mars's `keybindings.json`, `settings.json` and
-`themes/*.json` (`PI_CODING_AGENT_DIR` or `~/.mars/agent`, never written) and `prefs.json` beside `config.json`, keeps a
+`themes/*.json` (`MARS_CODING_AGENT_DIR` or `~/.mars/agent`, never written) and `prefs.json` beside `config.json`, keeps a
 validated whitelist and posts it as data; it watches them, so custom themes and bindings hot-reload. `--theme` and
 `--no-themes` work as in pi. The launcher also queries the terminal's colors (OSC 10/11/4, mode 2031) and posts
 them with its color depth and platform. `<P2_DATA_DIR>/tui.json` (`TuiPreferences`) only holds server defaults, e.g.
@@ -1130,7 +1130,7 @@ translated phone drawer and intercept chat taps.
   `tool_search` is installed by the worker's registry (`durableRegistry`: once, while code mode is off and any extension
   has a deferred tool the model may call; MCP's and the terminal tool share it). Tests: `mcp.test.ts` (manager and views on a bare host with `test/fixtures/mcp-server.mjs` and
   an HTTP fixture; projects, where sessions work, and an environment through the debug pi-env daemon, skipped without
-  it: `npm run build:daemon` in `packages/env`, or `PI_ENV_DAEMON`), `mcp-instances.test.ts` (the supervisor with a
+  it: `npm run build:daemon` in `packages/env`, or `MARS_ENV_DAEMON`), `mcp-instances.test.ts` (the supervisor with a
   short backoff), `mcp-leases.test.ts`, `mcp-environments.test.ts`, `mcp-project.test.ts`,
   `mcp-windows-command.test.ts`, `mcp-tools.test.ts`, `mcp-worker.test.ts` (fake provider: a project file, `tool_search`,
   a call, a relocation).

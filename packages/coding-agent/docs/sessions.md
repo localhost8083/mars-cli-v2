@@ -57,7 +57,7 @@ See [Compaction Reference](compaction.md) for thresholds, retained boundaries, b
 
 ## Control session storage
 
-By default, Mars stores sessions under `~/.mars/agent/sessions/`, grouped by working directory. Use `--session-dir`, `PI_CODING_AGENT_SESSION_DIR`, or the `sessionDir` setting to choose another location. The CLI option has highest precedence.
+By default, Mars stores sessions under `~/.mars/agent/sessions/`, grouped by working directory. Use `--session-dir`, `MARS_CODING_AGENT_SESSION_DIR`, or the `sessionDir` setting to choose another location. The CLI option has highest precedence.
 
 Use `--no-session` for an ephemeral run. An ephemeral session cannot be resumed after Mars exits.
 

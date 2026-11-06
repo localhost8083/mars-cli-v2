@@ -2438,7 +2438,7 @@ const bashTool = createBashTool(cwd, {
 });
 ```
 
-`createBashTool()` and `createPowerShellTool()` expose the current session to commands through `PI_SESSION_ID`, `PI_SESSION_FILE`, `PI_PROVIDER`, `PI_MODEL`, and `PI_REASONING_LEVEL`. Injection happens before `spawnHook`, so hooks receive these values in `env` and preserve them when they spread the existing environment as above. Set `exposeSessionEnvironment: false` to disable them:
+`createBashTool()` and `createPowerShellTool()` expose the current session to commands through `MARS_SESSION_ID`, `MARS_SESSION_FILE`, `MARS_PROVIDER`, `MARS_MODEL`, and `MARS_REASONING_LEVEL`. Injection happens before `spawnHook`, so hooks receive these values in `env` and preserve them when they spread the existing environment as above. Set `exposeSessionEnvironment: false` to disable them:
 
 ```typescript
 const bashTool = createBashTool(cwd, {

@@ -90,7 +90,7 @@ if (totalUpdates === 0) {
 const aiPackage = workspacePackages.find((pkg) => pkg.data.name === "@earendil-works/pi-ai");
 const aiVersionPath = aiPackage && join(dirname(aiPackage.path), "src", "utils", "version.ts");
 if (aiVersionPath && existsSync(aiVersionPath)) {
-	const content = `// The @earendil-works/pi-ai package version. scripts/sync-versions.js keeps it in sync with package.json.\nexport const PI_AI_VERSION = ${JSON.stringify(aiPackage.data.version)};\n`;
+	const content = `// The @earendil-works/pi-ai package version. scripts/sync-versions.js keeps it in sync with package.json.\nexport const MARS_AI_VERSION = ${JSON.stringify(aiPackage.data.version)};\n`;
 	if (readFileSync(aiVersionPath, "utf8") !== content) {
 		writeFileSync(aiVersionPath, content);
 		console.log(`\nUpdated ${aiVersionPath} to ${aiPackage.data.version}.`);

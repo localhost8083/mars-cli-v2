@@ -6,9 +6,9 @@ import {
 	type AssistantMessage,
 	createAssistantMessageEventStream,
 	getAttributionHeaders,
+	MARS_ATTRIBUTION,
 	type Model,
 	normalizeContext,
-	PI_ATTRIBUTION,
 	type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -31,15 +31,15 @@ describe("createAgentSession client identity", () => {
 		agentDir = join(tempDir, "agent");
 		mkdirSync(cwd, { recursive: true });
 		mkdirSync(agentDir, { recursive: true });
-		originalTelemetryEnv = process.env.PI_TELEMETRY;
-		delete process.env.PI_TELEMETRY;
+		originalTelemetryEnv = process.env.MARS_TELEMETRY;
+		delete process.env.MARS_TELEMETRY;
 	});
 
 	afterEach(() => {
 		if (originalTelemetryEnv === undefined) {
-			delete process.env.PI_TELEMETRY;
+			delete process.env.MARS_TELEMETRY;
 		} else {
-			process.env.PI_TELEMETRY = originalTelemetryEnv;
+			process.env.MARS_TELEMETRY = originalTelemetryEnv;
 		}
 		if (tempDir && existsSync(tempDir)) {
 			rmSync(tempDir, { recursive: true, force: true });
@@ -146,7 +146,7 @@ describe("createAgentSession client identity", () => {
 		expect(options?.identity).toEqual({
 			userAgent: "detailed",
 			version: VERSION,
-			attribution: PI_ATTRIBUTION,
+			attribution: MARS_ATTRIBUTION,
 		});
 		expect(getAttributionHeaders(model, options?.identity)).toEqual({
 			"HTTP-Referer": "https://pi.dev",
@@ -163,8 +163,8 @@ describe("createAgentSession client identity", () => {
 		expect(getAttributionHeaders(model, options?.identity)).toEqual({});
 	});
 
-	it("turns attribution off with PI_TELEMETRY=0", async () => {
-		process.env.PI_TELEMETRY = "0";
+	it("turns attribution off with MARS_TELEMETRY=0", async () => {
+		process.env.MARS_TELEMETRY = "0";
 		const options = await captureOptions(createModel("openrouter", "https://openrouter.ai/api/v1"));
 
 		expect(options?.identity?.attribution).toBeNull();

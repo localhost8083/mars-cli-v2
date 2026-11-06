@@ -44,4 +44,4 @@ export { contentText, getSystemMessageText, renderSystemMessageUpdate } from "./
 export * from "./utils/transcript.ts";
 export { uuidv7 } from "./utils/uuid.ts";
 export * from "./utils/validation.ts";
-export { PI_AI_VERSION } from "./utils/version.ts";
+export { MARS_AI_VERSION } from "./utils/version.ts";

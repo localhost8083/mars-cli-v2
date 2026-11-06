@@ -8,12 +8,12 @@ import {
 	formatUserAgent,
 	getAttributionHeaders,
 	getIdentityHeaders,
+	MARS_ATTRIBUTION,
 	mergeClientIdentity,
-	PI_ATTRIBUTION,
 	withClientIdentity,
 } from "../src/utils/identity.ts";
 import { normalizeContext } from "../src/utils/transcript.ts";
-import { PI_AI_VERSION } from "../src/utils/version.ts";
+import { MARS_AI_VERSION } from "../src/utils/version.ts";
 
 const ACME = { name: "acme", url: "https://acme.example" };
 
@@ -68,11 +68,11 @@ const context = normalizeContext({ messages: [{ role: "user", content: "hello", 
 describe("client identity", () => {
 	it("keeps the version constant in sync with package.json", () => {
 		const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string };
-		expect(PI_AI_VERSION).toBe(pkg.version);
+		expect(MARS_AI_VERSION).toBe(pkg.version);
 	});
 
 	it("formats user agents", () => {
-		expect(formatUserAgent()).toBe(`pi/${PI_AI_VERSION} (${process.platform}; ${runtime}; ${process.arch})`);
+		expect(formatUserAgent()).toBe(`pi/${MARS_AI_VERSION} (${process.platform}; ${runtime}; ${process.arch})`);
 		expect(formatUserAgent({ version: "9.9.9" })).toBe(`pi/9.9.9 (${process.platform}; ${runtime}; ${process.arch})`);
 		expect(formatUserAgent({ userAgent: "short", version: "9.9.9" })).toBe("pi");
 		expect(formatUserAgent({ userAgent: { custom: "acme/1.0" } })).toBe("acme/1.0");
@@ -82,11 +82,11 @@ describe("client identity", () => {
 		expect(mergeClientIdentity(undefined, undefined)).toBeUndefined();
 		expect(
 			mergeClientIdentity(
-				{ attribution: PI_ATTRIBUTION, userAgent: "short" },
+				{ attribution: MARS_ATTRIBUTION, userAgent: "short" },
 				{ attribution: undefined, version: "1.0.0" },
 			),
-		).toEqual({ attribution: PI_ATTRIBUTION, userAgent: "short", version: "1.0.0" });
-		expect(mergeClientIdentity({ attribution: PI_ATTRIBUTION }, { attribution: null })).toEqual({
+		).toEqual({ attribution: MARS_ATTRIBUTION, userAgent: "short", version: "1.0.0" });
+		expect(mergeClientIdentity({ attribution: MARS_ATTRIBUTION }, { attribution: null })).toEqual({
 			attribution: null,
 		});
 	});
@@ -100,7 +100,7 @@ describe("client identity", () => {
 
 	it("attributes OpenRouter requests", () => {
 		const openRouter = target("openrouter", "https://openrouter.ai/api/v1");
-		expect(getAttributionHeaders(openRouter, { attribution: PI_ATTRIBUTION })).toEqual({
+		expect(getAttributionHeaders(openRouter, { attribution: MARS_ATTRIBUTION })).toEqual({
 			"HTTP-Referer": "https://pi.dev",
 			"X-OpenRouter-Title": "pi",
 			"X-OpenRouter-Categories": "cli-agent",
@@ -120,13 +120,13 @@ describe("client identity", () => {
 		});
 		// Custom providers routed through OpenRouter, including legacy base URLs that are not valid URLs.
 		expect(
-			getAttributionHeaders(target("custom", "not-a-url-openrouter.ai"), { attribution: PI_ATTRIBUTION }),
+			getAttributionHeaders(target("custom", "not-a-url-openrouter.ai"), { attribution: MARS_ATTRIBUTION }),
 		).toMatchObject({ "X-OpenRouter-Title": "pi" });
 	});
 
 	it("attributes NVIDIA NIM requests with a capitalized name and OpenCode requests with the name", () => {
 		expect(
-			getAttributionHeaders(target("nvidia", "https://example.test/v1"), { attribution: PI_ATTRIBUTION }),
+			getAttributionHeaders(target("nvidia", "https://example.test/v1"), { attribution: MARS_ATTRIBUTION }),
 		).toEqual({
 			"X-BILLING-INVOKE-ORIGIN": "Pi",
 		});
@@ -134,7 +134,7 @@ describe("client identity", () => {
 			getAttributionHeaders(target("custom-nim", "https://integrate.api.nvidia.com/v1"), { attribution: ACME }),
 		).toEqual({ "X-BILLING-INVOKE-ORIGIN": "Acme" });
 		expect(
-			getAttributionHeaders(target("opencode", "https://opencode.ai/zen/v1"), { attribution: PI_ATTRIBUTION }),
+			getAttributionHeaders(target("opencode", "https://opencode.ai/zen/v1"), { attribution: MARS_ATTRIBUTION }),
 		).toEqual({
 			"x-opencode-client": "pi",
 		});
@@ -145,11 +145,11 @@ describe("client identity", () => {
 
 	it("does not attribute NVIDIA models routed through gateways to NVIDIA", () => {
 		expect(
-			getAttributionHeaders(target("openrouter", "https://openrouter.ai/api/v1"), { attribution: PI_ATTRIBUTION }),
+			getAttributionHeaders(target("openrouter", "https://openrouter.ai/api/v1"), { attribution: MARS_ATTRIBUTION }),
 		).not.toHaveProperty("X-BILLING-INVOKE-ORIGIN");
 		expect(
 			getAttributionHeaders(target("vercel-ai-gateway", "https://ai-gateway.vercel.sh/v1"), {
-				attribution: PI_ATTRIBUTION,
+				attribution: MARS_ATTRIBUTION,
 			}),
 		).toEqual({});
 	});
@@ -164,7 +164,7 @@ describe("client identity in requests", () => {
 		await streamCompletions(model, context, {
 			apiKey: "key",
 			fetch: capture.fetch,
-			identity: { attribution: PI_ATTRIBUTION, userAgent: "short" },
+			identity: { attribution: MARS_ATTRIBUTION, userAgent: "short" },
 			headers: { "HTTP-Referer": null } as ProviderHeaders,
 		}).result();
 

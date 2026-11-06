@@ -63,7 +63,7 @@ CLI tool options override this setting for one invocation. `--tools` with only `
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| `sessionDir` | string | Agent session directory | Session storage directory. Relative paths resolve from the working directory. `PI_CODING_AGENT_SESSION_DIR` and `--session-dir` override this setting. |
+| `sessionDir` | string | Agent session directory | Session storage directory. Relative paths resolve from the working directory. `MARS_CODING_AGENT_SESSION_DIR` and `--session-dir` override this setting. |
 | `sessionShareDestination` | `"auto" \| "gist" \| "radius"` | `"auto"` | Destination used by `/share`. `auto` uses Radius when authenticated and otherwise creates a GitHub gist. `gist` always uses a gist. `radius` requires Radius authentication and never falls back to a gist. |
 
 ### Compaction
@@ -105,7 +105,7 @@ See [Compaction Reference](compaction.md) for trigger, summarization, and valida
 | `showHardwareCursor` | boolean | `false` | Use the terminal cursor instead of Mars's drawn cursor. Mars still positions it for input methods. |
 | `terminal.showImages` | boolean | `true` | Display inline images when supported. |
 | `terminal.imageWidthCells` | number | `60` | Preferred inline image width in terminal cells. |
-| `terminal.clearOnShrink` | boolean | `false` | Clear empty rows when rendered content shrinks. When unset, `PI_CLEAR_ON_SHRINK=1` enables it. |
+| `terminal.clearOnShrink` | boolean | `false` | Clear empty rows when rendered content shrinks. When unset, `MARS_CLEAR_ON_SHRINK=1` enables it. |
 | `terminal.showTerminalProgress` | boolean | `false` | Show OSC 9;4 progress in the terminal tab. |
 | `terminal.hyperlinks` | `boolean \| "auto"` | `"auto"` | Override OSC 8 hyperlink detection. |
 | `terminal.images` | `"kitty" \| "iterm2" \| "auto" \| false` | `"auto"` | Override inline-image protocol detection. |
@@ -142,7 +142,7 @@ Keep `retry.provider.maxRetries` at `0` unless provider-level retries are requir
 | `shellPath` | string | Platform default | Custom shell executable path. Supports a leading `~`. |
 | `shellCommandPrefix` | string | None | Prefix prepended to every shell command. |
 | `npmCommand` | `string[]` | `npm` | Command and arguments used for npm package lookup and installation. |
-| `selfUpdateCommand` | `string[]` | None | Command and arguments `mars update` runs to update Mars itself, with `{packageName}`, `{version}`, and `{installSpec}` placeholders. `PI_SELF_UPDATE_COMMAND` takes precedence. **Can only be set in agent-directory settings.** See [Custom update command](cli.md#custom-update-command). |
+| `selfUpdateCommand` | `string[]` | None | Command and arguments `mars update` runs to update Mars itself, with `{packageName}`, `{version}`, and `{installSpec}` placeholders. `MARS_SELF_UPDATE_COMMAND` takes precedence. **Can only be set in agent-directory settings.** See [Custom update command](cli.md#custom-update-command). |
 
 See [Shell aliases](shell-aliases.md) for shell setup and [Mars Packages](packages.md) for package-manager behavior.
 

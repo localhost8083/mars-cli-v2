@@ -708,7 +708,7 @@ env, paths or commands.
 
 ### 4.3 As implemented (P1)
 
-- **Launcher** (`P2/src/hosts/tui-local-preferences.ts`): reads `$PI_CODING_AGENT_DIR` or `~/.mars/agent`
+- **Launcher** (`P2/src/hosts/tui-local-preferences.ts`): reads `$MARS_CODING_AGENT_DIR` or `~/.mars/agent`
   (`keybindings.json`, `settings.json`, `themes/*.json`) and `~/.mars/p2-tui/prefs.json` (`P2_TUI_CONFIG_DIR`) through
   bounded descriptor reads (regular files, 256 KiB each; at most 64 themes, 1 MiB in total). Keybindings pass the copied
   key-id pattern and legacy-name migration (`P2/src/tui/keybindings.ts`); settings pass the whitelist

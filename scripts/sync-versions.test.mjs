@@ -112,11 +112,11 @@ test("writes the pi-ai version constant", async () => {
 		});
 		const versionPath = join(root, "packages/ai/src/utils/version.ts");
 		await mkdir(join(root, "packages/ai/src/utils"), { recursive: true });
-		await writeFile(versionPath, 'export const PI_AI_VERSION = "1.0.0";\n');
+		await writeFile(versionPath, 'export const MARS_AI_VERSION = "1.0.0";\n');
 
 		const result = runSyncVersions(root);
 		assert.equal(result.status, 0, result.stderr);
-		assert.match(await readFile(versionPath, "utf8"), /export const PI_AI_VERSION = "2\.0\.0";\n$/);
+		assert.match(await readFile(versionPath, "utf8"), /export const MARS_AI_VERSION = "2\.0\.0";\n$/);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

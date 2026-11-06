@@ -563,7 +563,7 @@ entry (the first build's `(document_id, kind, seq)` cost (a) 15%). (d)'s burst i
 1,000 in a fresh process 2.17 vs 2.18-2.38 µs; in the full gate, HEAD's in-memory path runs warm from the persisted
 sections before it, the build's does not share as much of their code (`StoredChange`'s variants).
 
-**Durable's conversation view benchmark** (`test/conversation-view-bench.ts`, `PI_DURABLE_BENCH_STORAGE`), two runs
+**Durable's conversation view benchmark** (`test/conversation-view-bench.ts`, `MARS_DURABLE_BENCH_STORAGE`), two runs
 each, `SqliteStorage` → `StoreStorage`: append one entry per commit 56.1-57.2 → 56.2-57.0 µs with one watch, 61.0-62.1
 → 62.7-63.1 µs with four (+2%); bursts of 50 884-888 → 891 µs; `pi.live` only 62.7-63.0 → 65.1-66.6 µs (+4-6%); a
 long-lived watch over 20,000 appends 0.83-0.85 → 0.84-0.85 s CPU; heaps 21.5 → 21.7 MiB.

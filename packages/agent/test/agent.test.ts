@@ -1,4 +1,4 @@
-import { type ClientIdentity, PI_ATTRIBUTION } from "@earendil-works/pi-ai";
+import { type ClientIdentity, MARS_ATTRIBUTION } from "@earendil-works/pi-ai";
 import {
 	type AssistantMessage,
 	createAssistantMessageEventStream,
@@ -1221,9 +1221,9 @@ describe("Agent", () => {
 		await agent.prompt("and again");
 
 		expect(received).toEqual([
-			{ attribution: PI_ATTRIBUTION },
+			{ attribution: MARS_ATTRIBUTION },
 			{ attribution: acme, userAgent: "short" },
-			{ attribution: PI_ATTRIBUTION, userAgent: "short" },
+			{ attribution: MARS_ATTRIBUTION, userAgent: "short" },
 		]);
 	});
 });

@@ -25,9 +25,9 @@ import { type Child, ChildStore } from "../../plugins/subagents/contract.ts";
 import { APP, type Cell, expectChord, failureOf, holdIn, poll, settled, TEST, testHost, until } from "./helpers.ts";
 
 const FIXTURE = fileURLToPath(new URL("../fixtures/mcp-server.mjs", import.meta.url));
-/** The pi-env daemon environments start servers through: `PI_ENV_DAEMON`, else the debug build of packages/env. */
+/** The pi-env daemon environments start servers through: `MARS_ENV_DAEMON`, else the debug build of packages/env. */
 const DAEMON =
-	process.env.PI_ENV_DAEMON ??
+	process.env.MARS_ENV_DAEMON ??
 	fileURLToPath(
 		new URL(
 			`../../../../packages/env/daemon/target/debug/pi-env${process.platform === "win32" ? ".exe" : ""}`,

@@ -173,7 +173,7 @@ not carried over.
 | Web shell | PWA, sheets, navigation, reconnect | 9,252 | **base**, rebuilt on slice 11 ("look and feel great") |
 | TUI | launcher, sandbox, 40 commands, themes, keybindings | 6,720 + launcher | **base** on slice 11 |
 | Dev and reload | supervisor, dirty marks, reload tool | 468 + scripts | **base** as the app kit's "apply changes"; the supervisor goes |
-| Fake provider, `PI_MOBILE_*` aliases, `P2_DEV_RESUME` | test and legacy leftovers | 218 | drop |
+| Fake provider, `MARS_MOBILE_*` aliases, `P2_DEV_RESUME` | test and legacy leftovers | 218 | drop |
 | `tool_search`, MCP | not installed in p2 | - | later |
 
 Rough edges p3 should not inherit: features only in the TUI (shell commands, clone, fork, compact, new context), no

@@ -86,7 +86,7 @@ describe("DefaultResourceLoader", () => {
 
 		// #11088
 		it("should warn and keep loading when a configured package cannot be installed", async () => {
-			vi.stubEnv("PI_OFFLINE", "");
+			vi.stubEnv("MARS_OFFLINE", "");
 			const loader = new DefaultResourceLoader({
 				cwd,
 				agentDir,
@@ -108,7 +108,7 @@ describe("DefaultResourceLoader", () => {
 
 		// #11088
 		it("should point temporary extension sources at the source instead of pi remove", async () => {
-			vi.stubEnv("PI_OFFLINE", "");
+			vi.stubEnv("MARS_OFFLINE", "");
 			const loader = new DefaultResourceLoader({
 				cwd,
 				agentDir,
@@ -129,7 +129,7 @@ describe("DefaultResourceLoader", () => {
 
 		// #11088
 		it("should point project extension packages at pi remove --local", async () => {
-			vi.stubEnv("PI_OFFLINE", "");
+			vi.stubEnv("MARS_OFFLINE", "");
 			writeFileSync(
 				join(agentDir, "settings.json"),
 				JSON.stringify({ npmCommand: [process.execPath, "-e", "process.exit(1)"] }),
@@ -151,7 +151,7 @@ describe("DefaultResourceLoader", () => {
 
 		// #11088
 		it("should warn once about a failing install when project trust is resolved", async () => {
-			vi.stubEnv("PI_OFFLINE", "");
+			vi.stubEnv("MARS_OFFLINE", "");
 			const loader = new DefaultResourceLoader({
 				cwd,
 				agentDir,

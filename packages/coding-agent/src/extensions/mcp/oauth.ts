@@ -157,13 +157,13 @@ export class McpOAuthCredentialStore {
 }
 
 /** pi's Client ID Metadata Documents on pi.dev: `client.json` and `<callback ID>/client.json`. */
-const PI_CLIENT_METADATA_DOCUMENTS: McpClientMetadataDocuments = {
+const MARS_CLIENT_METADATA_DOCUMENTS: McpClientMetadataDocuments = {
 	baseUrl: "https://pi.dev/oauth",
 	listsRedirectUrl: isClientMetadataDocumentCallback,
 };
 
 /** pi's client identity for sign-in and refresh. */
-const PI_CLIENT = { clientName: APP_NAME, clientMetadataDocuments: PI_CLIENT_METADATA_DOCUMENTS };
+const MARS_CLIENT = { clientName: APP_NAME, clientMetadataDocuments: MARS_CLIENT_METADATA_DOCUMENTS };
 
 /** `settings` for pi-mcp: a rebranded build would show up as pi with pi's documents, so `auto` registers. */
 function piSettings(settings: McpOAuthSettings): McpOAuthSettings {
@@ -178,7 +178,7 @@ export function createMcpAuthProvider(options: {
 	settings: () => McpOAuthSettings;
 	onChallenge: (challenge: OAuthChallenge) => void;
 }): McpAuthProvider {
-	return createAuthProvider({ ...options, ...PI_CLIENT, settings: () => piSettings(options.settings()) });
+	return createAuthProvider({ ...options, ...MARS_CLIENT, settings: () => piSettings(options.settings()) });
 }
 
 export interface McpSignInPrompt {
@@ -218,11 +218,11 @@ export async function signInMcpServer(options: {
 		serverUrl,
 		store,
 		settings,
-		clientMetadataDocuments: PI_CLIENT_METADATA_DOCUMENTS,
+		clientMetadataDocuments: MARS_CLIENT_METADATA_DOCUMENTS,
 		renderPage: renderCallbackPage,
 	});
 	try {
-		const signIn = { serverUrl, store, settings, redirectUrl, challenge, signal, ...PI_CLIENT };
+		const signIn = { serverUrl, store, settings, redirectUrl, challenge, signal, ...MARS_CLIENT };
 		const authorization = await startMcpSignIn(signIn);
 		if (authorization.kind === "authorized") return;
 		prompt.showAuthorizationUrl(new URL(authorization.authorizationUrl));

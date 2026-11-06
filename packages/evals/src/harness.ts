@@ -32,7 +32,7 @@ import {
 	type UsageSummary,
 } from "vitest-evals/harness";
 import type { DocumentationVariant } from "./plan.ts";
-import { PI_SESSION_SNAPSHOT_ARTIFACT } from "./report.ts";
+import { MARS_SESSION_SNAPSHOT_ARTIFACT } from "./report.ts";
 
 type PiRunDiagnostics = {
 	events: TranscriptEvent[];
@@ -69,21 +69,21 @@ export type PiCodingAgentHarnessWithOutput<TOutput extends JsonValue> = PiCoding
 
 export function resolveModelSelection(
 	explicitModel: PiCodingAgentModelSelection | undefined,
-	environment: { PI_PROVIDER?: string; PI_MODEL?: string } = process.env,
+	environment: { MARS_PROVIDER?: string; MARS_MODEL?: string } = process.env,
 ): PiCodingAgentModelSelection {
-	const provider = (explicitModel?.provider ?? environment.PI_PROVIDER)?.trim();
-	const id = (explicitModel?.id ?? environment.PI_MODEL)?.trim();
+	const provider = (explicitModel?.provider ?? environment.MARS_PROVIDER)?.trim();
+	const id = (explicitModel?.id ?? environment.MARS_MODEL)?.trim();
 	if (!provider || !id) {
-		throw new Error("Select a harness model explicitly or set both PI_PROVIDER and PI_MODEL as defaults.");
+		throw new Error("Select a harness model explicitly or set both MARS_PROVIDER and MARS_MODEL as defaults.");
 	}
 	return { provider, id };
 }
 
 export function applyIsolatedEnvironment(home: string, agentDir: string): () => void {
-	const overrides = { HOME: home, USERPROFILE: home, PI_CODING_AGENT_DIR: agentDir };
+	const overrides = { HOME: home, USERPROFILE: home, MARS_CODING_AGENT_DIR: agentDir };
 	const previous = new Map<string, string | undefined>();
 	for (const name of Object.keys(process.env)) {
-		if (!name.startsWith("PI_EVAL_")) continue;
+		if (!name.startsWith("MARS_EVAL_")) continue;
 		previous.set(name, process.env[name]);
 		delete process.env[name];
 	}
@@ -101,7 +101,7 @@ export function applyIsolatedEnvironment(home: string, agentDir: string): () => 
 
 type SandboxIdentity = { uid: number; gid: number };
 
-function parseSandboxId(name: "PI_EVAL_SANDBOX_UID" | "PI_EVAL_SANDBOX_GID"): number | undefined {
+function parseSandboxId(name: "MARS_EVAL_SANDBOX_UID" | "MARS_EVAL_SANDBOX_GID"): number | undefined {
 	const value = process.env[name];
 	if (value === undefined) return undefined;
 	const id = Number(value);
@@ -110,11 +110,11 @@ function parseSandboxId(name: "PI_EVAL_SANDBOX_UID" | "PI_EVAL_SANDBOX_GID"): nu
 }
 
 function resolveSandboxIdentity(): SandboxIdentity | undefined {
-	const uid = parseSandboxId("PI_EVAL_SANDBOX_UID");
-	const gid = parseSandboxId("PI_EVAL_SANDBOX_GID");
+	const uid = parseSandboxId("MARS_EVAL_SANDBOX_UID");
+	const gid = parseSandboxId("MARS_EVAL_SANDBOX_GID");
 	if (uid === undefined && gid === undefined) return undefined;
 	if (uid === undefined || gid === undefined) {
-		throw new Error("Set both PI_EVAL_SANDBOX_UID and PI_EVAL_SANDBOX_GID, or neither.");
+		throw new Error("Set both MARS_EVAL_SANDBOX_UID and MARS_EVAL_SANDBOX_GID, or neither.");
 	}
 	return { uid, gid };
 }
@@ -423,7 +423,7 @@ async function runPiCodingAgent<TOutput extends JsonValue>(
 				cleanupErrors.push(new Error("Pi eval produced no session file."));
 			} else {
 				try {
-					setArtifact(PI_SESSION_SNAPSHOT_ARTIFACT, await readFile(sessionPath, "utf8"));
+					setArtifact(MARS_SESSION_SNAPSHOT_ARTIFACT, await readFile(sessionPath, "utf8"));
 				} catch (error) {
 					cleanupErrors.push(error);
 				}
@@ -485,10 +485,10 @@ export function createPiCodingAgentHarness<TOutput extends JsonValue>(
 export const DOCUMENTATION_EVAL_TOOLS = ["read", "write", "edit", "grep", "find", "ls"] as const;
 
 export function resolveDocumentationVariant(
-	value: string | undefined = process.env.PI_EVAL_VARIANT,
+	value: string | undefined = process.env.MARS_EVAL_VARIANT,
 ): DocumentationVariant {
 	if (value === "without_docs" || value === "with_docs") return value;
-	throw new TypeError('PI_EVAL_VARIANT must be "without_docs" or "with_docs".');
+	throw new TypeError('MARS_EVAL_VARIANT must be "without_docs" or "with_docs".');
 }
 
 export function excludePiDocumentation(defaultPrompt: string): string {
@@ -523,7 +523,7 @@ export function createPiDocumentationEvalHarness(
 export function createPiDocumentationEvalHarness<TOutput extends JsonValue>(
 	options: DocumentationHarnessOptions | DocumentationHarnessWithOutput<TOutput> = {},
 ) {
-	if (process.env.PI_EVAL_CONTAINER !== "1" || !resolveSandboxIdentity()) {
+	if (process.env.MARS_EVAL_CONTAINER !== "1" || !resolveSandboxIdentity()) {
 		throw new Error("Documentation evals must run in the isolated container sandbox.");
 	}
 	const variant = resolveDocumentationVariant();

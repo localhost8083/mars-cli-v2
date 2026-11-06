@@ -7,6 +7,9 @@ const durableSrcTesting = fileURLToPath(new URL("./src/testing/index.ts", import
 export default defineConfig({
 	test: {
 		environment: "node",
+		// Storage tests run hundreds of real sqlite commits and reopen databases;
+		// on slow machines the 5s default flakes (CI failure on sqlite-commit seeds).
+		testTimeout: 120_000,
 		// Run in workerd by their own config: `npm run test:workers`.
 		exclude: [...configDefaults.exclude, "test-workers/**"],
 		setupFiles: ["./test/setup-document-retention.ts"],

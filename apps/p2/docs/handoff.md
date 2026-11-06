@@ -129,7 +129,7 @@ From `AGENTS.md` and this project's history:
 - **Commit only verified states.** When several agents edit one tree, copy an agent's files into a separate worktree
   on top of `HEAD`, run `npm run check` and the full `npm test` there, and commit exactly that content
   (`git hash-object -w` and `git update-index`). A browser test that times out under load and passes on its own is
-  acceptable; anything else is not. Lockfile commits need `PI_ALLOW_LOCKFILE_CHANGE=1`; npm 11 strips `libc` fields,
+  acceptable; anything else is not. Lockfile commits need `MARS_ALLOW_LOCKFILE_CHANGE=1`; npm 11 strips `libc` fields,
   revert that noise. Never `--no-verify`.
 - **Deploy only pushed commits** (`~/p2.mariozechner.at/deploy.sh` on slayer).
 - **Port from the diff.** Changes copied from elsewhere start from the commit (`git show <hash>`), never from a

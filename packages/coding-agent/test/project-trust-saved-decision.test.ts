@@ -88,7 +88,7 @@ async function probeProjectTrust(dirs: Dirs): Promise<boolean> {
 		],
 		{
 			cwd: dirs.projectDir,
-			env: { ...process.env, [ENV_AGENT_DIR]: dirs.agentDir, PI_OFFLINE: "1" },
+			env: { ...process.env, [ENV_AGENT_DIR]: dirs.agentDir, MARS_OFFLINE: "1" },
 			stdio: ["ignore", "ignore", "pipe"],
 		},
 	);

@@ -23,7 +23,7 @@ import type { MousePolicy } from "./tui-modes.ts";
 const MAX_THEME_BYTES = 1024 * 1024;
 
 export type LocalPreferenceSources = {
-	/** pi's agent directory (`PI_CODING_AGENT_DIR` or `~/.pi/agent`). */
+	/** pi's agent directory (`MARS_CODING_AGENT_DIR` or `~/.pi/agent`). */
 	agentDir: string;
 	/** p2's launcher directory (`P2_TUI_CONFIG_DIR` or `~/.pi/p2-tui`), holding `prefs.json`. */
 	configDir: string;
@@ -37,7 +37,7 @@ export function localPreferenceSources(
 	options: { theme?: string; noThemes?: boolean } = {},
 	env: NodeJS.ProcessEnv = process.env,
 ): LocalPreferenceSources {
-	const configured = env.PI_CODING_AGENT_DIR;
+	const configured = env.MARS_CODING_AGENT_DIR;
 	const agentDir = configured
 		? configured === "~" || configured.startsWith("~/")
 			? join(homedir(), configured.slice(1))

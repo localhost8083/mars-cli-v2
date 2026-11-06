@@ -27,7 +27,7 @@ are never imported from the visitor's checkout. Successful server plugin reloads
 the launcher swaps to a fresh worker only after readiness and terminates its predecessor. TUI-only source/import
 changes count as dirty plugins. TUI imports gate facet inclusion without expanding server/worker selection.
 Keybindings, theme and display settings are guest-local: the launcher reads mars's `~/.mars/agent` files
-(`PI_CODING_AGENT_DIR`) and `~/.mars/p2-tui/prefs.json`, validates them and posts data to the worker, watching for
+(`MARS_CODING_AGENT_DIR`) and `~/.mars/p2-tui/prefs.json`, validates them and posts data to the worker, watching for
 changes; `<P2_DATA_DIR>/tui.json` (`TuiPreferences`) holds only server defaults below them. Launcher `config.json`
 holds only per-origin cookies.
 

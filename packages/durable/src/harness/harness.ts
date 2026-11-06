@@ -4,8 +4,8 @@ import type { JsonValue } from "@earendil-works/chord/json";
 import type { Models } from "@earendil-works/pi-ai";
 import {
 	type ClientIdentity,
+	MARS_ATTRIBUTION,
 	mergeClientIdentity,
-	PI_ATTRIBUTION,
 	withClientIdentity,
 } from "@earendil-works/pi-ai/utils/identity";
 import {
@@ -188,7 +188,7 @@ class ConversationImpl<Tool extends ToolRegistration> implements Conversation {
 }
 
 /** Request identity of a Harness's model requests: pi-ai's defaults with provider attribution to pi. */
-export const DEFAULT_HARNESS_IDENTITY: ClientIdentity = { attribution: PI_ATTRIBUTION };
+export const DEFAULT_HARNESS_IDENTITY: ClientIdentity = { attribution: MARS_ATTRIBUTION };
 
 /**
  * `HarnessOptions.models` as a function with `HarnessOptions.identity` applied. A plain `Models` is wrapped once; a

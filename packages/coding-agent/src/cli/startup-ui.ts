@@ -107,7 +107,7 @@ async function clearStartupTui(ui: TUI): Promise<void> {
  * First-time setup runs when all of these hold:
  * - no custom agent dir override is active
  * - setup was not completed before (settings.json does not exist)
- * (The upstream "official Pi distribution" and PI_EXPERIMENTAL gates do not apply:
+ * (The upstream "official Pi distribution" and MARS_EXPERIMENTAL gates do not apply:
  * this fork IS the official marscli distribution.)
  */
 export function shouldRunFirstTimeSetup(settingsPath: string = getSettingsPath()): boolean {

@@ -56,7 +56,7 @@ export const SIGN_IN_TIMEOUT_MS = 10 * 60_000;
  * `http://localhost/callback` (any port), so loopback sign-ins may use them; p2's https callback route registers
  * dynamically.
  */
-const PI_CLIENT_METADATA_DOCUMENTS: McpClientMetadataDocuments = {
+const MARS_CLIENT_METADATA_DOCUMENTS: McpClientMetadataDocuments = {
 	baseUrl: "https://pi.dev/oauth",
 	listsRedirectUrl: (redirectUrl) => {
 		const url = new URL(redirectUrl);
@@ -127,7 +127,7 @@ export class SignIns {
 			settings: () => settingsOf(server.config),
 			onChallenge: (challenge) => this.#challenges.set(keyOf(server), challenge),
 			clientName: this.#clientName,
-			clientMetadataDocuments: PI_CLIENT_METADATA_DOCUMENTS,
+			clientMetadataDocuments: MARS_CLIENT_METADATA_DOCUMENTS,
 		});
 	}
 
@@ -145,7 +145,7 @@ export class SignIns {
 						serverUrl: server.url,
 						store,
 						settings,
-						clientMetadataDocuments: PI_CLIENT_METADATA_DOCUMENTS,
+						clientMetadataDocuments: MARS_CLIENT_METADATA_DOCUMENTS,
 						renderPage: (page) => callbackPage(server.name, page),
 					});
 		const options: McpSignInOptions = {
@@ -155,7 +155,7 @@ export class SignIns {
 			redirectUrl: listening.redirectUrl,
 			challenge: this.#challenges.get(keyOf(server)),
 			clientName: this.#clientName,
-			clientMetadataDocuments: PI_CLIENT_METADATA_DOCUMENTS,
+			clientMetadataDocuments: MARS_CLIENT_METADATA_DOCUMENTS,
 		};
 		let start: Awaited<ReturnType<typeof startMcpSignIn>>;
 		try {

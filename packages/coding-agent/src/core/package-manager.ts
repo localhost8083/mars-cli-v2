@@ -60,9 +60,9 @@ const NETWORK_TIMEOUT_MS = 10000;
 const UPDATE_CHECK_CONCURRENCY = 4;
 const GIT_UPDATE_CONCURRENCY = 4;
 
-/** Whether PI_OFFLINE is set; package installs and updates then skip all network access. */
+/** Whether MARS_OFFLINE is set; package installs and updates then skip all network access. */
 export function isOfflineModeEnabled(): boolean {
-	const value = process.env.PI_OFFLINE;
+	const value = process.env.MARS_OFFLINE;
 	if (!value) return false;
 	return value === "1" || value.toLowerCase() === "true" || value.toLowerCase() === "yes";
 }

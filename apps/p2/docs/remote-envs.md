@@ -55,20 +55,20 @@ observed state and expose `Envs.failure`. Management writes are locked. Example:
 
 Trusted keys use `<data>/ssh/known_hosts` and alias `pi-env-<name>`. Managed keys use `<data>/ssh/keys/<name>`;
 keep this directory private. Upload requires a server-assigned owner principal, not a client hostname or display
-name. Generation and fetching an existing public key are owner-only too (every owner, as in Pi Mobile); never guests.
+name. Generation and fetching an existing public key are owner-only too (every owner, as in Mars Mobile); never guests.
 
 The env worker contributes a lazy machine per environment through `HarnessEnvironments` (one connection, a
 `RemoteExecutionEnv` per directory), shared by every conversation of the worker working there; the native Harness
 does not select a local default for a remote location. Connection failures belong to the operation that needed the host;
 a later operation retries. SSH bootstrap/deployment and host-key handling use the workspace `pi-env` package,
 which verifies its content-addressed daemon before each start. The package currently deploys daemons under the
-remote `~/.pi/mobile/tools/`; this fixed package path is not an import from apps/mobile.
+remote `~/.mars/mobile/tools/`; this fixed package path is not an import from apps/mobile.
 
-Attachments are copied to remote `~/.pi/p2/uploads/<session>/` on the machine of the receiving conversation before
+Attachments are copied to remote `~/.mars/p2/uploads/<session>/` on the machine of the receiving conversation before
 prompt admission. The message lists remote paths; inline images still read the private local upload copy.
 `send_file`, workspace reads/uploads and coding tools use the conversation's environment. Global `<data>/AGENTS.md`
 remains local; project instructions are read from the conversation's cwd ancestors, and skills from its machine's
-`~/.pi/p2/skills/` and `<cwd>/.pi/skills/`. Prompt watches run through
+`~/.mars/p2/skills/` and `<cwd>/.mars/skills/`. Prompt watches run through
 the same environment; remote prompt loading is background work so an offline host does not block worker startup.
 
 The terminals plugin opens a terminal at the viewed conversation's location (the server reads it from the catalog

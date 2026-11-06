@@ -11,7 +11,7 @@ stats:
   - 6 | decisions open
 note: |
   A brief before the slice 7b spec, written by the redesign session from `design.md` §21, the dependency model
-  (`dependencies/model.md`, decided and built for 7a in pi `339847eb1`), the carry-over in `slices.md` and the code at
+  (`dependencies/model.md`, decided and built for 7a in mars `339847eb1`), the carry-over in `slices.md` and the code at
   `339847eb1`. Marks: **Decided** points cite the decision; **Open** points are the owner's, with a recommendation.
 colophon: Slice 7b brief · 2026-10-29 · Chord v2
 ---
@@ -103,7 +103,7 @@ plugins/notes/
   `--ignore-scripts` and bundled into every facet that imports them. **Decided** (owner, 2026-10-29): bundled by
   default; on Node a plugin may keep named packages external by an explicit list, `"chord": { "external":
   ["better-sqlite3"] }`. Server and worker facets then load them from the plugin's `node_modules` with `createRequire`,
-  as pi 1.0 loads extension dependencies, native addons included; they stay in Node's module cache until the process
+  as mars 1.0 loads extension dependencies, native addons included; they stay in Node's module cache until the process
   ends, so a new version takes effect after a restart. A browser or TUI facet that imports one fails to build.
 - **No `tsconfig.json` is needed.** The bundler strips types and does not type-check; JSX is compiled with the
   automatic React runtime, a fixed setting of the loader. A plugin may keep a `tsconfig.json` for its editor and for

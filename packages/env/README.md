@@ -1,6 +1,6 @@
 # @earendil-works/pi-env
 
-Remote execution environments for [Pi Durable](../durable): an agent's tools run on another machine, usually over SSH,
+Remote execution environments for [Mars Durable](../durable): an agent's tools run on another machine, usually over SSH,
 while the Durable worker, its storage and credentials stay local.
 
 - `pi-env` (`daemon/`): a small Rust program that runs on the remote machine. It speaks a framed protocol on stdin and

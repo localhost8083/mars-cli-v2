@@ -4124,7 +4124,7 @@ A tool result may request `addTools`, `terminate`, or `handoff`. The
 generation's `tools` phase (section 8.5) adds the named tools to the
 conversation's stored tools filter; they take effect at the next preparation. The round
 terminates only when every result of the round requests `terminate`, as in the
-pi agent loop; the `tools` phase then uses a final boundary. Any
+mars agent loop; the `tools` phase then uses a final boundary. Any
 `handoff` in the round, the last one in call order when several ask, appends a
 `pi.reset` entry with `head: "self"` and the handoff text as a user message
 (section 8.1), exactly what `reset(handoff)` writes, and the run continues: the

@@ -50,7 +50,7 @@ p2 gets MCP servers. The design, in short:
   (WP1, done).
 - **Instances.** Stdio servers run once per session and location by default; `"shared": true` in the owner's
   configuration makes one process for everybody. Streamable HTTP servers are shared by default.
-- **Configuration.** The owner's `<P2_DATA_DIR>/mcp.json` (trusted) plus a project's `<cwd>/.pi/mcp.json`, which the
+- **Configuration.** The owner's `<P2_DATA_DIR>/mcp.json` (trusted) plus a project's `<cwd>/.mars/mcp.json`, which the
   worker reads at its location and sends to the manager (untrusted, restricted, see WP7).
 - **Tools.** Workers turn the servers' tools into Durable tools named `mcp__<server>__<tool>`, deferred (found through
   `tool_search`) or callable only from code mode.
@@ -62,7 +62,7 @@ p2 gets MCP servers. The design, in short:
   worker host (session s1)                      server host
  ┌──────────────────────────────────┐          ┌──────────────────────────────────────────────────────┐
  │ MCP worker object                │  hold as │ p2.mcp: remote view, one per principal               │
- │  · reads .pi/mcp.json per        ├─────────►│  worker variant ──┐                                  │
+ │  · reads .mars/mcp.json per        ├─────────►│  worker variant ──┐                                  │
  │    location via its ExecutionEnv │  worker  │                   ▼                                  │
  │  · contributes Durable tools     │  {s1}    │ p2.mcp.manager: local, host lifetime                 │
  └──────────────────────────────────┘          │  instances, leases, OAuth, pi-env connections        │
@@ -150,7 +150,7 @@ export class RemoteProcess {
 - OAuth in `src/oauth/`: `McpOAuthProvider` and `McpOAuthStateStore` (`provider.ts`; the state persists
   `codeVerifier` and `oauthState`, so a sign-in can complete in another request with the same store),
   `authorizeMcp` (`flow.ts`), `OAuthCallbackServer` (`callback.ts`), discovery and errors.
-- No dependency on other pi packages, and only `cross-spawn` at runtime. Keep it that way.
+- No dependency on other mars packages, and only `cross-spawn` at runtime. Keep it that way.
 
 ### 4.4 p2 today and after the port
 
@@ -202,7 +202,7 @@ export class RemoteProcess {
   session's conversations work at; leases elsewhere end) and `call({ location, server, tool, args })`; the manager has
   `setLocations` and `releaseLeases` with the caller's session, generation and incarnation. Worker state: `servers`
   and `errors` (the session's leases' project refusals).
-- **Project files as text:** the worker sends `<cwd>/.pi/mcp.json` as read (`{ location, text }`, at most 256 KiB, or
+- **Project files as text:** the worker sends `<cwd>/.mars/mcp.json` as read (`{ location, text }`, at most 256 KiB, or
   `{ location, error }` when unreadable; absent: none); the manager parses and checks it (`project.ts`) at each
   placement. A project override may also turn on an owner server that is `"enabled": false`.
 - **Where sessions work:** a lease gets servers only on an environment its session works on as the server records it
@@ -217,11 +217,11 @@ export class RemoteProcess {
 
 ### 4.7 As built (WP8): differences from section 11
 
-- **Which servers sign in:** as in pi, an owner HTTP server without an `Authorization` header (`oauthServerOf` in
+- **Which servers sign in:** as in mars, an owner HTTP server without an `Authorization` header (`oauthServerOf` in
   `placement.ts`); its instances list `auth: "oauth"`. Only those wait for a sign-in on a 401 (`McpAuthRequiredError` or
   `McpOAuthAuthorizationRequiredError`), also when a call's tokens are refused for good; a server refusing its
   configured headers fails and retries instead.
-- **Credentials:** `credentials.ts`, `<P2_DATA_DIR>/mcp-auth.json` through p2's `LockedFile` (0600), keyed like pi's
+- **Credentials:** `credentials.ts`, `<P2_DATA_DIR>/mcp-auth.json` through p2's `LockedFile` (0600), keyed like mars's
   (`mcpNamespace(name)|url`). The refresh lock is a promise chain per server in the process, not `proper-lockfile`: one
   p2 server owns a data directory (process lock), and nothing else reads this file.
 - **Flows:** `sign-in.ts` (`SignIns`, a native of the manager), in memory, one per server (a new one replaces it),
@@ -321,7 +321,7 @@ updated. pi-mcp still has no dependency on pi-env.
 **Where:** `packages/mcp/src/oauth` (new code) and
 `packages/coding-agent/src/extensions/mcp` (callers).
 
-**Why:** p2 must run the same sign-in as `pi mcp login`, but the authorization code reaches p2 later and in another
+**Why:** p2 must run the same sign-in as `mars mcp login`, but the authorization code reaches p2 later and in another
 request (its `/mcp/callback` route, a pasted URL, or a loopback server it runs). Today
 `signInMcpServer` in `packages/coding-agent/src/extensions/mcp/oauth.ts` opens its own loopback server and waits.
 
@@ -376,7 +376,7 @@ export async function completeMcpSignIn(options: {
   `waitForAuthorizationResponse`) becomes a small helper in pi-mcp, `waitForLoopbackSignIn(...)`, or stays in
   coding-agent if only it uses it. Decide by whether p2 needs it: p2 does (loopback for local browsers), so move it.
 - coding-agent keeps: `McpOAuthCredentialStore` (`mcp-auth.json`, `proper-lockfile`, `AuthStorageBackend`, legacy
-  keys), the callback page HTML, `pi mcp login`/`/mcp` UI. `signInMcpServer` in coding-agent becomes a thin wrapper:
+  keys), the callback page HTML, `mars mcp login`/`/mcp` UI. `signInMcpServer` in coding-agent becomes a thin wrapper:
   start, show the URL, wait for loopback or pasted URL, complete.
 
 **Tests:**
@@ -400,7 +400,7 @@ nothing user-visible, so no entry unless behavior changed).
 **Where:** `packages/mcp` (new `src/naming.ts`, `src/config.ts`), callers in
 `packages/coding-agent/src/core/mcp-servers.ts` and `src/extensions/mcp/tools.ts`.
 
-**Why:** p2 must name tools exactly like pi, so `tool_search` ranking and code mode namespaces behave the same.
+**Why:** p2 must name tools exactly like mars, so `tool_search` ranking and code mode namespaces behave the same.
 
 **Build:**
 
@@ -529,23 +529,23 @@ export const Mcp = remote("p2.mcp", {
 
 - A local, host-lifetime object in the worker holds `Mcp` (the server sees it as `worker{session}`).
 - At start and after every relocation of the session, and for every subagent with its own location: read
-  `<cwd>/.pi/mcp.json` through that location's `ExecutionEnv` (`readTextFile`; absent file: `project: null`), call
+  `<cwd>/.mars/mcp.json` through that location's `ExecutionEnv` (`readTextFile`; absent file: `project: null`), call
   `load`. Call `unload` for locations nothing works at any more.
 - Contribute one Durable `Extension` through the harness extension registry as a `self.writable`; `self.on(view.servers,
   ...)` rebuilds it. Tools:
   - name via `createMcpToolName` (WP4, else copied), description from the MCP tool, `parameters` normalized to an object
     schema;
-  - exposed as pi's default (`"exposure": "codemode"`): `deferred: true` and `callers: ["tools"]`, so only code mode
+  - exposed as mars's default (`"exposure": "codemode"`): `deferred: true` and `callers: ["tools"]`, so only code mode
     scripts call them (`searchTools()` finds them; neither the `codemode` section nor `tool_search` lists them). While
-    code mode is off or its plugin is not loaded (its `ExtensionSwitches` entry is not `true`), pi's fallback:
+    code mode is off or its plugin is not loaded (its `ExtensionSwitches` entry is not `true`), mars's fallback:
     `deferred: true` alone, loaded through `tool_search`;
-  - the `mcp_servers` section, as pi's: each server's namespace and how its tools are reached (no summaries yet: p2
+  - the `mcp_servers` section, as mars's: each server's namespace and how its tools are reached (no summaries yet: p2
     has no `description` field and does not pass on the servers' `instructions`);
   - `execute`: locate the calling conversation (`api.conversationId`, through the harness's environments), pick the
     instance for that location, call `view.call` from Durable code (design §24's helper), convert the result with
     `toLlmContent()`, pass `structuredContent` through as `structuredOutput` only if the tool declares an output schema,
     `isError` from the MCP result; replay stays `unsafe`.
-- Install `createToolSearchExtension()` only while it reaches the MCP tools (code mode off, servers present), as pi
+- Install `createToolSearchExtension()` only while it reaches the MCP tools (code mode off, servers present), as mars
   activates `tool_search` only for `deferred` servers. Per-server `exposure` and `toolExposure` are not read yet.
 
 ### 9.5 Owner configuration (`<P2_DATA_DIR>/mcp.json`)
@@ -602,15 +602,15 @@ dir and port, per "No hand tests on real sessions" in `apps/p2/docs/handoff.md`)
 
 ### 10.2 Project configuration
 
-The worker sends `<cwd>/.pi/mcp.json` with `load`; the manager validates it at that boundary. Project entries are
+The worker sends `<cwd>/.mars/mcp.json` with `load`; the manager validates it at that boundary. Project entries are
 untrusted (a repository wrote them, and the agent can edit them). Rules:
 
 | Rule | Why |
 | --- | --- |
 | stdio runs at its location only; `runOn` and `shared` are refused | the agent can already run commands there; anywhere else a repository would gain code execution on the p2 host or another machine |
 | no `${VAR}` from the p2 host's environment | a project could otherwise put the host's secrets in a header or argument; variables in `env` resolve at the location |
-| no `auth.provider`, no reuse of another server's OAuth client | as in pi: a repository does not choose where a credential goes |
-| an entry without `command`/`url`/`type` only overrides `enabled` of the owner entry with the same name | as in pi (`packages/coding-agent/src/extensions/mcp/config.ts`) |
+| no `auth.provider`, no reuse of another server's OAuth client | as in mars: a repository does not choose where a credential goes |
+| an entry without `command`/`url`/`type` only overrides `enabled` of the owner entry with the same name | as in mars (`packages/coding-agent/src/extensions/mcp/config.ts`) |
 | HTTP entries: **refused** in this WP | open decision (section 14); the p2 host would make the requests, so a project could reach addresses only the host can see |
 
 **Tests:** placement on a local "environment" through the local daemon (`localDaemon()`, as pi-env's tests do) so no
@@ -685,7 +685,7 @@ the redirect back (section 14).
 - A fix to `packages/env` or `packages/mcp` found during p2 work is its own commit, with its package's changelog entry.
 - Do not run MCP processes in session workers. Everything that spawns, connects or holds a token is in the manager.
 - Do not trust project `mcp.json`: validate at the manager, apply section 10.2.
-- Tool names must match pi's (`createMcpToolName`), including the hash suffix for long names.
+- Tool names must match mars's (`createMcpToolName`), including the hash suffix for long names.
 - Windows: `npx`/`uvx` are batch files; host stdio uses `cross-spawn` through `StdioTransport` (fine), environments need
   the `cmd.exe` wrapping (WP7).
 - The daemon kills a remote server when its connection drops; reconnect logic must expect that and restart it.

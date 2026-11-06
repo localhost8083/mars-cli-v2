@@ -220,7 +220,7 @@ file listing, PTYs) does not depend on SSH.
 ## Decided
 
 The worker updates the session index from events and sends it to the server; sessions sync to R2 through Radius:
-Radius reports per session its last sequence number, pi uploads the commit log from there; R2 holds the SQLite file
+Radius reports per session its last sequence number, mars uploads the commit log from there; R2 holds the SQLite file
 and the commit log, a SQLite Durable Object applies them; sessions have an owner id; the index is a Chord table
 replicated like a session, its row updated only on metadata, session idle and subagent idle changes.
 
@@ -306,11 +306,11 @@ its stand-ins fake that the sync layer must build (authenticated handshake, pers
 retries, streaming bootstrap with files, the DO and R2 side, the continue fence, the split's new id, pull-back after a
 power loss).
 
-# Branches and Subagent Context {#branches lede="pi's /tree, fork and clone, and subagents that start from the parent's context."}
+# Branches and Subagent Context {#branches lede="mars's /tree, fork and clone, and subagents that start from the parent's context."}
 
-pi branches three ways; p2 has two, in the TUI only:
+mars branches three ways; p2 has two, in the TUI only:
 
-| pi | What it does | p2 |
+| mars | What it does | p2 |
 | --- | --- | --- |
 | `/tree` | branch inside the session: pick an earlier message, edit and resubmit; the old branch stays; leaving a branch can summarize it into the one entered | missing |
 | `/fork` | a new session from an earlier user message | TUI only, main conversation only |

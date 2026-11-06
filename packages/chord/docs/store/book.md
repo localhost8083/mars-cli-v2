@@ -611,9 +611,9 @@ self.on(conversation.entries, async ({ value: entries }, ctx) => {
 # What's Next {.epilogue lede="What is decided, and the order in which it gets built."}
 
 The direction and all seventeen review items are decided (decision log, 2026-10-21). The store is new code; the parts
-outside it are small changes in pi:
+outside it are small changes in mars:
 
-- **pi, one change:** `Storage.commit(writes, adopt, context)` with every storage calling `adopt` (S1), the
+- **mars, one change:** `Storage.commit(writes, adopt, context)` with every storage calling `adopt` (S1), the
   Session's handling of rejections after adoption, the narrowed `mintId` comment (S10), `traceIn(options, fn,
   context)` (context last), Durable's `WatchHandle`/`WatchEnd` moved into Chord with generic end reasons and explicit
   retirement (W2), and Durable's state getters and the `replicatedState` family removed (W14).

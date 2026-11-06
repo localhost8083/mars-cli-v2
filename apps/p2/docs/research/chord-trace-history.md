@@ -13,7 +13,7 @@ This is a finding about the fetched, reachable repository history and the additi
 
 ## Scope and reproducibility
 
-Research baseline: `private` at `e5864dd82` (2026-10-17). `git fetch --all` completed for `origin` (`pi-private`) and `upstream` (`pi`); it updated only `upstream/feat/durable-timer`. `git log --all` covered 7,657 reachable commits and 95 remote-tracking refs. No branch was checked out, no source was changed, and no tests were run. Only this report was written.
+Research baseline: `private` at `e5864dd82` (2026-10-17). `git fetch --all` completed for `origin` (`pi-private`) and `upstream` (`mars`); it updated only `upstream/feat/durable-timer`. `git log --all` covered 7,657 reachable commits and 95 remote-tracking refs. No branch was checked out, no source was changed, and no tests were run. Only this report was written.
 
 The working tree already contained unrelated Chord v2/playground edits. Current-source citations below use **committed `e5864dd82`**, unless explicitly stated. The uncommitted cancellation paths inspected agree with the descriptions; one additional implementation detail is noted below.
 
@@ -42,7 +42,7 @@ Additional locations checked:
 - `/home/badlogic/p2-verify`: detached `7e7893b2e`.
 - `/home/badlogic/research/chord-wt` and `chord-patched`: source snapshots, not independent Git repositories; no trace/telemetry carrier implementation in their Chord sources.
 - `/home/badlogic/research/experiments/chord-{retire-order,leaks,leaks-patched}.ts`: experiment locations inventoried; the adjacent Chord copies concern lifecycle work, not a separate historical tracing runtime.
-- Other Git repositories under `~/research` are Cordis, OpenCode, and DeepSeek Harness, not additional pi/Chord history. They were not mistaken for branches of this repository.
+- Other Git repositories under `~/research` are Cordis, OpenCode, and DeepSeek Harness, not additional mars/Chord history. They were not mistaken for branches of this repository.
 
 ## Timeline and where to recover it
 
@@ -85,7 +85,7 @@ export interface Context {
 
 A key was an object containing a unique symbol. `withContextValue()` created a parent-linked layer; lookup compared symbol identity and delegated to the parent. `withAbortSignal()` layered a signal, combining it with the parent's signal using `AbortSignal.any()`. `withCancel()` created a child controller. `awaitWithContext()` canceled only the waiter, not the underlying promise.
 
-The pi adapter deliberately lived outside Chord. From `28b49a6b3:packages/agent/src/harness/context.ts` (also present after the service move):
+The mars adapter deliberately lived outside Chord. From `28b49a6b3:packages/agent/src/harness/context.ts` (also present after the service move):
 
 ```ts
 const TELEMETRY_CONTEXT_KEY = createContextKey<TelemetryContext>("pi.telemetryContext");

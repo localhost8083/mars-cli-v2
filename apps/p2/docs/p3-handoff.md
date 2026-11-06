@@ -6,7 +6,7 @@ not written here.
 
 ## 1. What we are doing
 
-Redesigning Chord (the object runtime) and p2 (Pi Mobile) from scratch as **Chord v2** (`packages/chord/src`)
+Redesigning Chord (the object runtime) and p2 (Mars Mobile) from scratch as **Chord v2** (`packages/chord/src`)
 and **p3** (`apps/p3`, later). Goal (owner): a minimal, powerful runtime with the fewest footguns, no memory leaks, the
 best possible performance and easy-to-grok code (size is not a goal by itself: owner, 2026-10-27).
 
@@ -64,7 +64,7 @@ Next after that: i18n build, telemetry (slice 9), small examples; p3 work packag
 - `chord-root` subagent (Opus) in `/home/badlogic/pi-chord-root` (worktree of origin/private): trial of making Chord v2
   the package root, old v1 to `src/old` or p2 (Durable and env import the root too), as a re-runnable script
   (`/tmp/chord-root/`), brief `/tmp/chord-root-brief.md`, report `/tmp/chord-root/report.md`. Owner wants pi-private
-  merged (into pi) this week.
+  merged (into mars) this week.
 
 **CURRENT STATE 2026-11-02 (night); the older paragraphs below are history.**
 - **Owner's working mode now:** "go ahead, just do all the things. tired of reviewing": this session writes specs,
@@ -112,10 +112,10 @@ Next after that: i18n build, telemetry (slice 9), small examples; p3 work packag
 - **Process lesson (again):** never run a file write and the dependent git command in one parallel tool batch (it
   happened 3 more times today).
 
-State as of 2026-10-28: **slices 6b and 8 are committed upstream** (pi `main`: 6b `14b4c56e5`, the design-audit fixes
+State as of 2026-10-28: **slices 6b and 8 are committed upstream** (mars `main`: 6b `14b4c56e5`, the design-audit fixes
 for slices 1-6a `391e83fb1`, slice 8 `6eb99ad65`; CI green; merged into `private` `c684ee727`). Since 2026-10-27 all
 of Chord v2 (`src`, its tests and `packages/chord/docs`, the decision log `decisions.md` included) lives in
-pi upstream: commit there first (worktree `/home/badlogic/pi-observers`, detach to `upstream/main`), then merge into
+mars upstream: commit there first (worktree `/home/badlogic/pi-observers`, detach to `upstream/main`), then merge into
 `private`. p2's check is clean on `c684ee727`; the phone runs `ff7cdfeae` (p2 itself unchanged since). Next: slice 7
 (reload and rollout): spec written by this session reading the code itself, decisions one at a time, spec reviews,
 build, reviews. Then slice 9 (telemetry; C11 `ctx.trace` to decide).
@@ -190,7 +190,7 @@ contracts, 6 `testPlugin`, 7 single-file plugins, 8 built-in plugins). All Claud
 `anthropic/claude-opus-5-5` (owner, 2026-10-31; replaces radius Opus/Fable). `schema-measure` (anthropic Opus) holds
 the schema measurement context.
 
-**State 2026-11-01 (morning):** **TypeBox is gone from pi** except the coding agent (for extensions): pi-schema
+**State 2026-11-01 (morning):** **TypeBox is gone from mars** except the coding agent (for extensions): pi-schema
 (`@earendil-works/pi-schema`, its own closure-compiled validator, no eval; opt-in coercion `compile(s, { coerce: true
 })` with `coerce`/`parse`, the superset of TypeBox's `Value.Convert` and pi-ai's old rules; `Static` also types
 TypeBox-built schemas) is under pi-ai (`6536f8012`), pi-agent-core, pi-durable, Chord v1 and v2 (`be039fb31`, JSON and
@@ -232,7 +232,7 @@ when the user speaks; speak text before tool calls; choppy audio); deploy throug
   state members, `local` contracts only". Lazy creation, activation waiting for `self.get` dependencies and automatic
   retry stay. Owner's rule: **Chord and Durable align as much as possible** (design §1.10).
 - First spec review: "Writes carry their versions; archives are lossless", "Store errors: Durable's rule",
-  "`runCounted` in `chord/sqlite`" (pi `8025c414d`, verified in workerd: `rowsWritten` counts index writes),
+  "`runCounted` in `chord/sqlite`" (mars `8025c414d`, verified in workerd: `rowsWritten` counts index writes),
   "Restricted names instead of assigned table names", "Nullable columns and the `set` form", "The migration API: the
   reviewers' consensus" (the owner delegates the shape), "Cold keyed loads on the line", "Slice 6a small items" (20,
   among them: no hand-written memory backend, tests on SQLite `:memory:`).
@@ -257,7 +257,7 @@ when the user speaks; speak text before tool calls; choppy audio); deploy throug
   benchmark against a HEAD copy (bursts, alternating, pinned; allocation and retained memory). Re-reviews reuse the
   same reviewers (restore them; archiving keeps their context); a fix round adds no new decisions or features. Never message the phone session from a turn not started by the owner
   (it is refused). When a reviewer on an OpenAI model (Astra, Sol) fails with a model error during security work, it
-  was likely a refusal: send it a message that this is a defensive review of our own open-source code (pi, packages/chord),
+  was likely a refusal: send it a message that this is a defensive review of our own open-source code (mars, packages/chord),
   run against local copies, then let it continue (owner, 2026-10-31). Never commit a file write and the dependent git commit in one parallel tool batch (it happened
   three times: the commit missed the edit). Never call `history_handoff` unless the owner says so; the app may compact
   on its own, so keep this section current (2026-10-27: it was stale at a compaction).
@@ -296,15 +296,15 @@ when the user speaks; speak text before tool calls; choppy audio); deploy throug
   AGENTS.md (in every agent's context); every code brief and every review names it.
 - **Code subagents never commit or push unless told to** (owner, 2026-10-22): implement until done and report; reviewers
   review; the subagent fixes; the owner reviews the uncommitted changes in p2's workspace tab; then this session tells it
-  to commit. New Chord v2 code lives in `packages/chord/src/` (pi upstream since 2026-10-27, `93029a0f1`).
+  to commit. New Chord v2 code lives in `packages/chord/src/` (mars upstream since 2026-10-27, `93029a0f1`).
 
 ## 6. Environment and flows
 
-- slayer: repo `/home/badlogic/pi-private`, branch `private`; remotes `origin` (pi-private), `upstream` (pi). Node 24:
+- slayer: repo `/home/badlogic/pi-private`, branch `private`; remotes `origin` (pi-private), `upstream` (mars). Node 24:
   `/home/badlogic/node-v24.4.1-linux-x64/bin`. Commit docs with explicit paths; push `origin HEAD:private`; when a push
   is rejected: `git fetch origin && git merge --no-edit origin/private` (never rebase or stash).
-- **Everything outside `apps/` is pi first, Chord v2 and its docs included** (owner, 2026-10-27: Chord v2 and all
-  its docs, the decision log too, live in pi upstream: `packages/chord/src`, `test`, `docs`,
+- **Everything outside `apps/` is mars first, Chord v2 and its docs included** (owner, 2026-10-27: Chord v2 and all
+  its docs, the decision log too, live in mars upstream: `packages/chord/src`, `test`, `docs`,
   `docs/decisions.md`): worktree of `upstream/main` (`/home/badlogic/pi-observers`, `npm ci --ignore-scripts`,
   `(cd packages/ai && npm run hydrate-model-data)`, `npm run check`, explicit test files only, never the full Durable
   suite (paid e2e), push to `upstream main`, wait for green CI, then merge `upstream/main` into `private`).
@@ -312,11 +312,11 @@ when the user speaks; speak text before tool calls; choppy audio); deploy throug
   test`. Playground: `apps/chord-playground`.
 - Subagents: none of this session's are active (all archived on 2026-10-26); `ultimate`, `issue-10959`,
   `p3-walkthrough` are the owner's (leave). Worktrees: `/home/badlogic/p2-live` (runs the live p2 server, tmux `p2`;
-  keep); `/home/badlogic/pi-observers` (upstream pi worktree used for today's pi changes, detached at `6c384aa30`,
-  clean; reuse for the next pi change after `git fetch upstream && git checkout --detach upstream/main` and
+  keep); `/home/badlogic/pi-observers` (upstream mars worktree used for today's mars changes, detached at `6c384aa30`,
+  clean; reuse for the next mars change after `git fetch upstream && git checkout --detach upstream/main` and
   `npm ci --ignore-scripts`). Durable/Chord tests without a build: vitest configs `/tmp/observers/vitest.durable.config.ts`
   and `/tmp/observers/vitest.chord.config.ts` (alias pi-ai and pi-telemetry to src). The phone dev session `d602d653-61f1-4f99-aa54-99267e9dbf4e` deploys p2
   to the phone on request (only from owner-initiated turns).
 - Radius artifacts: always `visibility=private` (mcporter usage in `/home/badlogic/AGENTS.md`). Explainer build:
-  `node /home/badlogic/.pi/p2/skills/explainer/build.mjs <md> -o <html>`; the store book and walkthrough are
+  `node /home/badlogic/.mars/p2/skills/explainer/build.mjs <md> -o <html>`; the store book and walkthrough are
   published as private artifacts (book `01m5g0jztafkrvk6kq8w88h6hx`, walkthrough `01m5g0ms6demgtyyfdznhxnfre`).

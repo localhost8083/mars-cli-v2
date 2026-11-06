@@ -38,7 +38,7 @@ Restarting the server resumes any triage runs that were in flight.
 
 Open `http://127.0.0.1:7788/?t=<token>` once, with the token from `scripts/issues/data/token`. The server then sets a cookie, so later visits don't need the token.
 
-The agent authenticates through `~/.pi/agent/auth.json`, the same credentials pi uses.
+The agent authenticates through `~/.mars/agent/auth.json`, the same credentials mars uses.
 
 | Variable | Default | |
 |---|---|---|

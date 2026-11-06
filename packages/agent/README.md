@@ -233,7 +233,7 @@ const agent = new Agent({
   sessionId: "session-123",
 
   // How requests identify the app to providers (pi-ai ClientIdentity), merged over
-  // DEFAULT_AGENT_IDENTITY ({ attribution: PI_ATTRIBUTION }: provider attribution headers name pi).
+  // DEFAULT_AGENT_IDENTITY ({ attribution: PI_ATTRIBUTION }: provider attribution headers name mars).
   // Pass your app's attribution, or null to send none.
   identity: { attribution: { name: "my-app", url: "https://my-app.example" } },
 

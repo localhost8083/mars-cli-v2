@@ -86,7 +86,7 @@ Read-only, based on origin/private `5abe3f6d6`. Abbreviations:
 | chatmode | Messages without `@pi` become display-only chat entries (author, text, attachments, reply) | entry | tx | O, GW | wkr | send |
 | chatmode | `@pi` mention: digest of the chat since the last mention, recording which entries it passed on | ≤100 messages, ≤20 files, ≤4 images; scan ≤2000 | tx | O, GW | wkr | send, uploads |
 | chatmode | Composer chip with the count of chat messages not yet passed on | count | eph | O, GR | web, tui | view |
-| chatmode | Reply to a person's or Pi's message: client names the entry, worker derives author and a 60-char quote | quote | tx | O, GW | web, tui, wkr | — |
+| chatmode | Reply to a person's or Mars's message: client names the entry, worker derives author and a 60-char quote | quote | tx | O, GW | web, tui, wkr | — |
 | chatmode | Quote line and "with N chat messages" note in the transcript; dashed bubble; `@pi` completion first; hint text | — | — | O, GR | web, tui | renderers |
 
 ## Cross-session messages

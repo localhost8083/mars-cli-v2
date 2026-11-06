@@ -390,7 +390,7 @@ their frames take no extra hop. Burst median 7.80-8.38 µs against HEAD's 7.82-8
 against 7.99 / 10.36 µs). Host setup (+2-4%) and a document member's read through a reference (+0.25 ns) are accepted
 as they are.
 
-After Delta's tracker stopped allocating a `WeakRef` per change (pi a92283056, merged as 95ec93a08), against HEAD
+After Delta's tracker stopped allocating a `WeakRef` per change (mars a92283056, merged as 95ec93a08), against HEAD
 95ec93a08 (which has that change too) extracted at a path as long as this checkout's (44 characters). Sol's tight
 harness without a per-operation timer (`taskset -c 4`, five alternating pairs of processes, 31 bursts of 10,000 after
 3 warm-up bursts; medians of the burst medians, ranges in parentheses):
@@ -453,7 +453,7 @@ The forwarded-link gap is not work or retention in 6a's code. It is a V8 decisio
   clear it. So a site that allocates one context per change shows a high survival rate.
 - Heap snapshots taken during and after the run are equal between the two trees, and no 6a object outlives its
   change.
-- pi a92283056 ("Delta's tracker holds its one open change without a WeakRef") removed the cause: the numbers above
+- mars a92283056 ("Delta's tracker holds its one open change without a WeakRef") removed the cause: the numbers above
   it show the forwarded link at HEAD's level with 6-7 MB promoted and 2 mark-compacts on both.
 
 A retirement under a diamond of derives (`test/bench/derives.ts`: 40 derives in 13 layers of two derives joined

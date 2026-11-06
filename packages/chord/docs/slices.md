@@ -51,7 +51,7 @@ slice spec's section citations are for orientation, not a reading limit (owner, 
   reloads, resolves, revocations, routines, job phases and HTTP requests, carriers on `hold` and `call`, `ctx.trace`,
   commit events and the host-wide metrics, `telemetry` options of `createHttp`, `startServer` and `startWorker`;
   example 62; `test/bench/telemetry.ts` (with R24's container width).
-- **Chord's shared code** (upstream pi): `src/watch.ts` (`Watch`, `NativeWatch`, `WatchHandle`, `WatchEnd`,
+- **Chord's shared code** (upstream mars): `src/watch.ts` (`Watch`, `NativeWatch`, `WatchHandle`, `WatchEnd`,
   `NativeWatchable`), Delta (`track`, `diffRevisions`, `applyImmutable`, encoders, `PendingOps`, `appendText`),
   context, JSON, output, SQLite drivers.
 
@@ -194,7 +194,7 @@ deleted (the slice's spec and code are the record). Moved here from `carry-over.
 - **One N on every host:** a relay forwards calls at once, so a worker announcing a smaller N than the relay's could
   see more running calls of one origin than it accepts (a protocol error). Every host announces 256; per-link N, if
   ever needed, must bound the relay's forwarding too. (Slice 4a rework.)
-- **The Durable conversation view's size on re-hold** is a known cost until pi #11327 (windowed view) lands. (Slice 4.)
+- **The Durable conversation view's size on re-hold** is a known cost until mars #11327 (windowed view) lands. (Slice 4.)
 
 ### Later: reload (when a case needs it)
 
@@ -215,7 +215,7 @@ deleted (the slice's spec and code are the record). Moved here from `carry-over.
 ### When v2 goes upstream
 
 - `mapShared` lives in `src/state/derive.ts` and moves into Delta. (L2 decisions.)
-- `withLinkedAbortSignal` lives in `src/host/ctx.ts` and moves next to `withAbortSignal` in `src/context` (pi
+- `withLinkedAbortSignal` lives in `src/host/ctx.ts` and moves next to `withAbortSignal` in `src/context` (mars
   first): a call's context linked to long-lived abort signals until the call settles, instead of `AbortSignal.any`,
   which keeps cleanup entries per call while its sources live before Node 24.16.0 (nodejs/node#62367). (Slice 4a.)
 - An export for `nodeCompression` (`src/node/compression.ts`; no subpath exports it yet). (Slice 4b.)

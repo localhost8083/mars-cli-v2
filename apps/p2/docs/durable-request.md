@@ -3,7 +3,7 @@
 **Superseded:** p2 builds its own document store in Chord with a storage interface and adapts Durable's `Storage` in p2
 (`target-design.md` §9). Only moving `OutputBuffer`/`Progress` to Chord is still under consideration.
 
-From the Chord/p2 redesign (`target-design.md`). To be implemented on pi `main` (`packages/durable`, plus `packages/chord`
+From the Chord/p2 redesign (`target-design.md`). To be implemented on mars `main` (`packages/durable`, plus `packages/chord`
 where noted), then merged into `private`.
 
 ## Why

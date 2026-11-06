@@ -1,8 +1,8 @@
-# Porting pi's interactive TUI to p2
+# Porting mars's interactive TUI to p2
 
-Goal: when an existing pi user opens p2's TUI (`npm run tui`), it should look and behave like pi's coding agent
+Goal: when an existing mars user opens p2's TUI (`npm run tui`), it should look and behave like mars's coding agent
 (`packages/coding-agent`, interactive mode), wherever that makes sense for a server-backed, multi-user, sandboxed app.
-This is not a feature-parity checklist. The guide lists every user-facing feature of pi's TUI, says how p2 gets each
+This is not a feature-parity checklist. The guide lists every user-facing feature of mars's TUI, says how p2 gets each
 one, and gives the designs and the work plan for the port. Sections 1–9 are the porting design; where the build
 differs, the "As built" sections of section 10 describe the code.
 
@@ -47,7 +47,7 @@ file and symbol. Section 2 maps where the port lives in p2.
 | Mouse: wheel, selection, copy-on-select, right-click paste, clickable logo | `CA/modes/interactive/tui-renderer.ts:35-46`, `IM:256` | Wheel and selection: (b), behind a **G** mouse policy plus launcher mode ownership (section 3.6). Copy is **L:copy**; right-click paste is **L:paste**. Easter eggs are (c). |
 | Startup header: logo, version, key hints (Ctrl+O toggles compact/expanded), onboarding line | `IM:1009-1075`, `CMP/pi-logo.ts:19` | (a) Hints come from the command registry (section 6). Show the server origin and the role (owner/guest) in place of the version. |
 | Loaded-resources listing | `IM:1772` | (d) Owner only: **new** resources view (AGENTS.md and skills from `P2/plugins/prompt/worker.ts`, enabled plugins). |
-| Changelog / update notices | `IM:843`, `IM:4647`, `IM:4679` | (c) Server releases are not pi releases. Reuse the slot for owner notices. |
+| Changelog / update notices | `IM:843`, `IM:4647`, `IM:4679` | (c) Server releases are not mars releases. Reuse the slot for owner notices. |
 | Footer line 1: cwd, git branch, session name | `CMP/footer.ts:165-177` (session name `:174-177`), rendered at `:286` | (b) `Sessions.sessions` gives title, env and cwd. The branch comes from `Workspace.query({kind:"status"})`, participant only. Guests in view mode get no branch. |
 | Footer line 2: tokens, cache rate, cost, context %, model and thinking | `CMP/footer.ts:179-212` stats, `:220-284` model side | (b) Data provenance in section 1.16. |
 | Footer line 3: extension statuses | `CMP/footer.ts:290-299` | (b) `TuiFooter` registry (section 7). |
@@ -71,7 +71,7 @@ file and symbol. Section 2 maps where the port lives in p2.
 | Ctrl+V clipboard paste (files, image, text) | `IM:3152`, `CA/utils/clipboard-image.ts:200` | **L:pasteImage**, launcher-matched (section 3). |
 | Drag & drop files | `IM:1047` (the terminal pastes paths) | **L:attach** with trusted consent (section 3.3). |
 | External editor | `IM:4608`, `CA/modes/interactive/external-editor.ts:14-46` (`editInExternalEditor`), `CA/core/settings-manager.ts:946` | **L:externalEditor**, launcher-matched; the command is **G** and never sent to the worker. |
-| Ctrl+C clear / double Ctrl+C exit / Ctrl+D exit on empty editor | `IM:4281`, `IM:4291`, `CMP/custom-editor.ts:118` | (a) As pi (10.1). |
+| Ctrl+C clear / double Ctrl+C exit / Ctrl+D exit on empty editor | `IM:4281`, `IM:4291`, `CMP/custom-editor.ts:118` | (a) As mars (10.1). |
 | Ctrl+Z suspend | `IM:4450` | **L:suspend**, launcher-matched. |
 | `!cmd` / `!!cmd` user bash | `IM:3346-3360`, `IM:6999`, `CMP/bash-execution.ts:21` | (d) **new** `Chat.shell` (participant, streamed through a live slot or an entry). |
 
@@ -152,7 +152,7 @@ Renderers are combined at `REN/index.ts:32`.
 | --- | --- | --- |
 | `/login [provider]`: auth type and provider selectors | `IM:5863`, `IM:5897`, `CMP/oauth-selector.ts:58` | (a) Data: `ProviderLogin.providers` (`P2/plugins/login/contract.ts`), owner only. |
 | OAuth dialog: URL, device code, manual code, progress, cancel | `CMP/login-dialog.ts:12`, `CMP/auth-url.ts:10`, `IM:6290-6298`, `IM:6314` | (a) Remove auto-open (`CMP/login-dialog.ts:3`, `:99-110`) and the native clipboard and platform hints (`CMP/auth-url.ts:2`, `:26-34`). The URL is displayed as text. Opening it is **L:openUrl** (external kind) and copying it is **L:copy**. Both are launcher-confirmed. |
-| Prompted values (API key, codes) | pi: plain `Input` (`IM:6295-6297` → `CMP/login-dialog.ts:58-63`), with the submitted value echoed as `> ${value}` (`CMP/login-dialog.ts:80-83`) | **p2 improvement, not pi parity.** For `prompt.type === "secret"`, use a secret-mode input that masks characters and does not echo the submitted value. The value is excluded from history, from the reload snapshot (`P2/src/hosts/tui-worker-runtime.ts:118`) and from status lines. The web already masks (`P2/plugins/login/web.tsx:130`). |
+| Prompted values (API key, codes) | mars: plain `Input` (`IM:6295-6297` → `CMP/login-dialog.ts:58-63`), with the submitted value echoed as `> ${value}` (`CMP/login-dialog.ts:80-83`) | **p2 improvement, not mars parity.** For `prompt.type === "secret"`, use a secret-mode input that masks characters and does not echo the submitted value. The value is excluded from history, from the reload snapshot (`P2/src/hosts/tui-worker-runtime.ts:118`) and from status lines. The web already masks (`P2/plugins/login/web.tsx:130`). |
 | `/logout`, refresh | `IM:6018`, `IM:6078` | (b) `ProviderLogin.logout` / `refresh`. |
 | Ambient auth, subscription warning, Radius offer | `IM:6174`, `IM:5273`, `IM:6389` | (c) Show `ProviderLogin` notices. |
 
@@ -162,7 +162,7 @@ Renderers are combined at `REN/index.ts:32`.
 | --- | --- | --- |
 | `/resume` selector | `CMP/session-selector.ts:694`, `CMP/session-selector-search.ts:39-153`, `IM:5720` | (a) UI with the documented adaptations in section 1.17. Data: `Sessions`, `Search`, `SessionStatus`. |
 | `/new` | `IM:6938` | (b) `Sessions.create({cwd, env})`. A separate `/new-context` uses **new** `Chat.reset(handoff?)` (`DUR/harness/types.ts:642`). |
-| `/name` | `IM:6680` | (b) `Sessions.rename`. pi distinguishes an explicit session name; p2 rows have only `title` (`P2/plugins/sessions/contract.ts:9-20`). |
+| `/name` | `IM:6680` | (b) `Sessions.rename`. mars distinguishes an explicit session name; p2 rows have only `title` (`P2/plugins/sessions/contract.ts:9-20`). |
 | `/session` | `IM:6705` | (b) Section 1.16 provenance. |
 | `/tree`, `/fork`, `/clone`, double-Esc action | `CMP/tree-selector.ts:1336`, `CMP/user-message-selector.ts:110`, `IM:5571`, `IM:5512`, `IM:5550`, `IM:3070-3093` | (b) `/tree` and double-Esc on Durable forks (`docs/tree.md`); (d) `/fork` and `/clone` via **new** `Sessions.fork` (`DUR/harness/types.ts:663`). |
 | `/export`, `/import` | `IM:6532`, `IM:6579` | (c) |
@@ -201,10 +201,10 @@ Defaults:
 - Platform overrides at `CA/core/keybindings.ts:180-199`, using `useWindowsKeybindings` (`CA/core/keybindings.ts:16`).
 - Legacy name migration at `CA/core/keybindings.ts:201-261`.
 
-The config file is `~/.pi/agent/keybindings.json` (`CA/core/keybindings.ts:338`, `packages/coding-agent/docs/keybindings.md`).
+The config file is `~/.mars/agent/keybindings.json` (`CA/core/keybindings.ts:338`, `packages/coding-agent/docs/keybindings.md`).
 Conflicts are only detected among user overrides (`TUI/keybindings.ts:243-262`).
 
-| pi id | default | p2 |
+| mars id | default | p2 |
 | --- | --- | --- |
 | `app.interrupt` | Esc | same id |
 | `app.clear` | Ctrl+C | same id |
@@ -217,7 +217,7 @@ Conflicts are only detected among user overrides (`TUI/keybindings.ts:243-262`).
 | `app.message.copy` | Ctrl+X | launcher-owned |
 | `app.message.followUp` / `.dequeue` | Alt+Enter / Alt+Up | same ids |
 | `app.clipboard.pasteImage` | Ctrl+V | launcher-owned |
-| `app.session.new/tree/fork/resume` | unbound | same ids, unbound like pi; `p2.sessions` keeps Ctrl+R in the chat context |
+| `app.session.new/tree/fork/resume` | unbound | same ids, unbound like mars; `p2.sessions` keeps Ctrl+R in the chat context |
 | selector-local `app.session.*`, `app.tree.*`, `app.models.*` | various | same ids, scoped to their overlay context |
 | — | — | `p2.tui.reload`, unbound (`/reload`); transcript scrolling uses `tui.altScreen.*` |
 
@@ -266,9 +266,9 @@ Conflicts are only detected among user overrides (`TUI/keybindings.ts:243-262`).
 
 From `CMP/settings-selector.ts:60-101` (config), `:482-865` (items) and
 `packages/coding-agent/docs/settings.md:13-21`, `:31-44`, `:72-88`, `:94-115`, `:123-143`.
-Nested keys are shown as pi spells them.
+Nested keys are shown as mars spells them.
 
-| pi setting | Kind in p2 | Notes |
+| mars setting | Kind in p2 | Notes |
 | --- | --- | --- |
 | `theme`, `quietStartup`, `editorPaddingX`, `outputPad`, `autocompleteMaxVisible`, `showHardwareCursor`, `hideThinkingBlock`, `doubleEscapeAction` | **G** | `doubleEscapeAction`: `tree` (default, `docs/tree.md`), `fork`, `none` |
 | `terminal.clearOnShrink`, `terminal.showTerminalProgress`, `terminal.showImages`, `terminal.imageWidthCells`, `terminal.hyperlinks`, `terminal.images`, `terminal.trueColor` | **G** | Image protocol selection only matters once launcher images exist. Hyperlinks need the URL policy (section 3.4). |
@@ -285,10 +285,10 @@ Nested keys are shown as pi spells them.
 
 ### 1.15 CLI behavior
 
-pi flags: `CA/cli/args.ts:83-268`, `:300-348`. p2 has only `[url]` and `--owner-link` (`P2/src/hosts/tui-config.ts:92-100`).
+mars flags: `CA/cli/args.ts:83-268`, `:300-348`. p2 has only `[url]` and `--owner-link` (`P2/src/hosts/tui-config.ts:92-100`).
 The **new** `--join` flag comes from P0.
 
-| pi flag | p2 | Where |
+| mars flag | p2 | Where |
 | --- | --- | --- |
 | `--tui-mode` | unsupported (1.1) | — |
 | `--verbose` | launcher: shows the expanded header and resource listing | launcher → worker flag |
@@ -323,7 +323,7 @@ The **new** `--join` flag comes from P0.
 
 ### 1.17 Session selector adaptations
 
-pi's selector depends on local full-text session data, which p2 does not have:
+mars's selector depends on local full-text session data, which p2 does not have:
 
 - Fuzzy tokens over id, name, all message text and cwd (`CMP/session-selector-search.ts:26-27`).
 - Phrases and `re:` regex (`CMP/session-selector-search.ts:39-153`).
@@ -337,11 +337,11 @@ Adaptations:
 
 - **Filtering.** Local fuzzy filtering over title, env:cwd and id. Message hits come from `Search.search`, shown in a
   separate "Messages" group labeled as literal matches. Phrases and `re:` are unsupported; the hint line says so.
-- **Tab scope.** Tab keeps pi's meaning: current env:cwd versus all sessions.
+- **Tab scope.** Tab keeps mars's meaning: current env:cwd versus all sessions.
 - **Archived.** Archived scope is a separate key: `app.session.toggleArchived`, default Ctrl+A.
 - **Sort.** Recent and relevance sorts are supported. Threaded sort groups by subagent parent
   (`Subagents`) rather than by forks.
-- **Named filter.** pi's named filter becomes a "pinned" filter (`pinned` exists).
+- **Named filter.** mars's named filter becomes a "pinned" filter (`pinned` exists).
 - **Delete.** Delete means archive, with restore available in the archived scope.
 
 Adding regex/phrase search would be a `Search` contract change (d).
@@ -429,7 +429,7 @@ Rules:
 | `title`, `progress`, `programStatus` | N | Sanitized (control characters removed), ≤ 80 chars / enum, ≤ 4 per second | Reset on exit |
 | `openUrl` | C | Section 3.5 | |
 | `download` | C | Section 3.5 | |
-| `savePrefs` | C | `{patch}`. Confirmation shows the actual patch as a diff. Privileged keys and the editor command are rejected. The launcher writes `~/.pi/p2-tui/prefs.json` atomically. | pi's own files are never written |
+| `savePrefs` | C | `{patch}`. Confirmation shows the actual patch as a diff. Privileged keys and the editor command are rejected. The launcher writes `~/.mars/p2-tui/prefs.json` atomically. | mars's own files are never written |
 | `image` | (d) N | Worker → launcher: a bounded PNG; the launcher decodes, re-encodes and emits graphics itself | |
 | `terminal` | (d) | Section 3.7 | |
 
@@ -544,7 +544,7 @@ Two distinct capabilities follow:
   (a launcher notice); the worker learns only `failed`. P0b ships the framework; P5 registers the actions.
 - **Worker API.** `ctx.grant(action, payload)` → `{kind:"request", id, action, payload}` → `{kind:"response", id,
   ok, value | error}`. The worker runtime reports `navigation` and `keyContext` after every input and render.
-- **Privileged matching** (`PrivilegedKeys`). Built from the visitor's local keybindings only (pi files and p2
+- **Privileged matching** (`PrivilegedKeys`). Built from the visitor's local keybindings only (mars files and p2
   prefs, never server defaults or the worker) and the guest platform, through `resolvePrivilegedKeys`; only ids with
   a registered K action are intercepted. A match is consumed before forwarding (key releases too, without firing).
 - **keyContext** (rule 3). The worker sends `{kind:"keyContext", suspendPrivileged}` whenever pi-tui's focus is not
@@ -558,14 +558,14 @@ Two distinct capabilities follow:
   `y` confirms; Escape, `n` and Ctrl+C cancel; other keys scroll or do nothing. On close it re-applies the worker's
   tracked modes and posts `{kind:"redraw"}`; the worker calls `tui.requestRender(true)`.
 - **Modes** (`P2/src/hosts/tui-modes.ts`, `tui-filter.ts`). The filter admits `?7` (the autowrap fix) and the mouse
-  modes pi's alt screen uses, by the visitor's launcher-only `prefs.json` key `mouse`: `"on"` (1000/1002/1006/1004,
-  button motion), `"all"` (also 1003), `"off"`. The default is pi's: `"on"` inside tmux/screen/zellij, else `"all"`
+  modes mars's alt screen uses, by the visitor's launcher-only `prefs.json` key `mouse`: `"on"` (1000/1002/1006/1004,
+  button motion), `"all"` (also 1003), `"off"`. The default is mars's: `"on"` inside tmux/screen/zellij, else `"all"`
   (`defaultMouse`, the same environment test pi-tui makes). `TerminalModes` records every private mode the worker set; `cleanup()` writes their inverses
   and the fixed reset of 3.6 (also `?1049l`) on exit, crash and before a swapped worker activates; `restore()` puts
   them back after launcher UI.
 - **Mouse** (owner request after P5). The worker runs pi-tui's `TuiAltScreen` as is with the mouse captured unless the
   policy is `"off"` (`input.mouse` in the sandbox's start data): wheel scrolling, selection, scrollbar dragging and
-  copy on select are pi-tui's code. pi's `fullscreenWheelScrollLines` (default `"auto"`) and `fullscreenCopyOnSelect`
+  copy on select are pi-tui's code. mars's `fullscreenWheelScrollLines` (default `"auto"`) and `fullscreenCopyOnSelect`
   (default true) are applied from the visitor's settings. The only p2 part is pi-tui's clipboard write: its
   `copySelection` hook requests the `copy.selection` launcher action (instead of the OSC 52 the filter strips), and
   the launcher accepts it once, within two seconds after it saw, in the raw input, the left-button release ending a
@@ -597,7 +597,7 @@ session the worker last reported (`navigation`).
 | `copy.key` | K `app.message.copy` (Ctrl+X) | — | Asks the worker `copyText` → `{text}` (≤ 1 MiB; chat answers the last answer); copies and shows "Copied N characters: <first line>". |
 | `openUrl` | C | `{kind: "external", url}` (https, no credentials, ≤ 2048) or `{kind: "origin", path}` | Origin paths: `/s/<uuid>`, `/artifact?session&name&version[&download]`, `/download?session&id`, built on the launcher's origin; content paths must be the bound session. The screen shows the full URL and, for origin paths, "the browser needs its own sign-in". Opens with the platform opener by argv, no shell, nothing appended. |
 | `download` | C | `{kind: "file", session, id, name?}` or `{kind: "artifact", session, name, version}` | `GET /download` or `/artifact?download=1` on the fixed origin with the launcher's cookie, `redirect: "error"`, 60 s, ≤ 25 MiB (declared and streamed); saves into the download folder (launcher-only `prefs.json` `downloads`, default `~/Downloads/p2`) under a sanitized name with `O_EXCL` (`name (1).ext`, never overwrites); partial files are removed. The local path is shown in a notice, never returned (`{saved: true}`). |
-| `editor.external` | K `app.editor.external` (Ctrl+G) | — | Asks `editorText` → `{text}` (null when there is no editable editor), writes a 0600 temp file, lends the terminal (worker IO suspended, modes undone, terminal stopped), runs the command by argv, restores, and sends `editorResult` `{text}` through the grant, so it is dropped after navigation or a swap. The command is launcher-only: `prefs.json` `externalEditor`, pi's `externalEditor`, `$VISUAL`, `$EDITOR`, then `nano`/`notepad`; split into argv without a shell (quotes group). |
+| `editor.external` | K `app.editor.external` (Ctrl+G) | — | Asks `editorText` → `{text}` (null when there is no editable editor), writes a 0600 temp file, lends the terminal (worker IO suspended, modes undone, terminal stopped), runs the command by argv, restores, and sends `editorResult` `{text}` through the grant, so it is dropped after navigation or a swap. The command is launcher-only: `prefs.json` `externalEditor`, mars's `externalEditor`, `$VISUAL`, `$EDITOR`, then `nano`/`notepad`; split into argv without a shell (quotes group). |
 | `suspend` | K `app.suspend` (Ctrl+Z) | — | Lends the terminal and raises SIGTSTP (keep-alive, SIGINT ignored while stopped); on SIGCONT restores modes and the worker redraws. Not on Windows. |
 | `devCommand` | C, owner | `{action: "reload"}` (nothing else) | `POST /__p2_dev` with the launcher's sign-in and exact Origin; returns `{message}` from the server. The server decides whether it is a dev server. |
 | `signOut` | C, owner | `{all: boolean}` | `POST /owner/logout` or `/owner/logout-all`. Denied for guests, and `all: false` on loopback (the device owner has no cookie). The server then revokes the connection, so the launcher shows "Signed out on this device." and the owner-link prompt (P0a), forgetting the cookie. |
@@ -684,14 +684,14 @@ what the agent does live with the server or session.
 
 | Preference | Owner of the data | Source |
 | --- | --- | --- |
-| Keybindings | Guest | `~/.pi/agent/keybindings.json` (migrated with a copy of `CA/core/keybindings.ts:201-261`), then `~/.pi/p2-tui/prefs.json` |
-| Theme, custom themes, light/dark pair | Guest | pi `settings.json` `theme` + `~/.pi/agent/themes/*.json`, then p2 prefs |
-| Display/editor keys from section 1.14 marked **G** | Guest | pi `settings.json` (nested keys as in 1.14), then p2 prefs |
+| Keybindings | Guest | `~/.mars/agent/keybindings.json` (migrated with a copy of `CA/core/keybindings.ts:201-261`), then `~/.mars/p2-tui/prefs.json` |
+| Theme, custom themes, light/dark pair | Guest | mars `settings.json` `theme` + `~/.mars/agent/themes/*.json`, then p2 prefs |
+| Display/editor keys from section 1.14 marked **G** | Guest | mars `settings.json` (nested keys as in 1.14), then p2 prefs |
 | External editor | Guest, launcher only | `externalEditor`, `$VISUAL`, `$EDITOR`; never sent |
 | Mouse policy, download folder | Guest, launcher only | p2 prefs |
 | Model, thinking, agent behavior | Session / server | `Chat.configure`, `<data>/settings.json` |
 | Credentials | Server | never leave the server |
-| Last session per origin | Guest launcher | `~/.pi/p2-tui/config.json` |
+| Last session per origin | Guest launcher | `~/.mars/p2-tui/config.json` |
 
 Flow:
 
@@ -699,8 +699,8 @@ Flow:
    Input is size-capped (256 KiB) and only whitelisted keys pass.
 2. It posts `{kind:"preferences", ...}` after admission and before `activate`, and again on file change (the launcher
    watches the files).
-3. Writes go only through `savePrefs` (C grant, 3.2) into p2's own file. pi's files are only read.
-4. Server `TuiPreferences` becomes optional server defaults. Precedence: built-in < server defaults < pi files <
+3. Writes go only through `savePrefs` (C grant, 3.2) into p2's own file. mars's files are only read.
+4. Server `TuiPreferences` becomes optional server defaults. Precedence: built-in < server defaults < mars files <
    p2 prefs. Privileged-action bindings never come from the server.
 
 Server code can read and relay whatever preferences reach the worker. Send only the whitelisted subset; never send
@@ -708,14 +708,14 @@ env, paths or commands.
 
 ### 4.3 As implemented (P1)
 
-- **Launcher** (`P2/src/hosts/tui-local-preferences.ts`): reads `$PI_CODING_AGENT_DIR` or `~/.pi/agent`
-  (`keybindings.json`, `settings.json`, `themes/*.json`) and `~/.pi/p2-tui/prefs.json` (`P2_TUI_CONFIG_DIR`) through
+- **Launcher** (`P2/src/hosts/tui-local-preferences.ts`): reads `$PI_CODING_AGENT_DIR` or `~/.mars/agent`
+  (`keybindings.json`, `settings.json`, `themes/*.json`) and `~/.mars/p2-tui/prefs.json` (`P2_TUI_CONFIG_DIR`) through
   bounded descriptor reads (regular files, 256 KiB each; at most 64 themes, 1 MiB in total). Keybindings pass the copied
   key-id pattern and legacy-name migration (`P2/src/tui/keybindings.ts`); settings pass the whitelist
-  `TuiSettingsSchema` (`P2/src/runtime/tui-preferences.ts`, the **G** keys of 1.14, nested as pi spells them);
+  `TuiSettingsSchema` (`P2/src/runtime/tui-preferences.ts`, the **G** keys of 1.14, nested as mars spells them);
   themes pass the copied `validateThemeJson`. Built-in/system names are reserved, as in pi. The launcher watches the
   three directories (`fs.watch`, re-armed on change, 100 ms debounce) and re-posts only changed preferences.
-- **`prefs.json`**: `{"keybindings": {...}, "theme": "light/dark", "settings": {...}}`, the same shapes as pi's files,
+- **`prefs.json`**: `{"keybindings": {...}, "theme": "light/dark", "settings": {...}}`, the same shapes as mars's files,
   overriding them. Launcher-only keys will join it in P5/P9 and are never posted.
 - **Message**: `{kind:"preferences", preferences:{keybindings, theme?, settings, themes, problems}}`. `problems` are
   display-only diagnostics (labels like `settings.json: invalid terminal.imageWidthCells`), without paths or contents;
@@ -884,7 +884,7 @@ Each input chunk passes these stages in order. The first stage that consumes it 
    interception for the current modal context. Launcher-drawn UI, when active, consumes everything (3.3).
 2. **pi-tui global and alt-screen handling.** Debug, mouse, search when open, then viewport keys unless an overlay
    defers (`TUI/tui-alt-screen.ts:729-793`). p2 cannot reorder this. It configures it instead: transcript scroll and
-   search ids are pi's `tui.altScreen.*` keys, and p2 commands must not claim them in contexts where the alt screen
+   search ids are mars's `tui.altScreen.*` keys, and p2 commands must not claim them in contexts where the alt screen
    handles them. The dispatcher reports such claims as conflicts.
 3. **Overlay stack.** The focused overlay's commands, then the overlay component.
 4. **Commands by context.** Matched against the current context set; more `when` terms means more specific.
@@ -894,8 +894,8 @@ Collision handling:
 
 - **Privileged vs anything.** At keymap build, the launcher checks each privileged key against all non-privileged
   bindings it knows: `tui.*`, `app.*` and the guest's p2 prefs. On a collision, the privileged action keeps the key
-  only if pi has the same default. Example: pi's Ctrl+G is both `app.editor.external` and
-  `tui.altScreen.searchNext`; pi resolves it by mode, and p2 by the worker's `suspendPrivileged` during search.
+  only if mars has the same default. Example: mars's Ctrl+G is both `app.editor.external` and
+  `tui.altScreen.searchNext`; mars resolves it by mode, and p2 by the worker's `suspendPrivileged` during search.
   Otherwise the privileged action loses the key and `/hotkeys` reports it.
 - **Commands vs commands.** Same key and same context specificity: the user binding wins over defaults. Remaining ties
   resolve to the first registered command and are reported.
@@ -908,7 +908,7 @@ Collision handling:
 export type TuiCommand = {
 	title: string;
 	category?: string;
-	keys?: KeyId | KeyId[];   // defaults; pi defaults for pi ids
+	keys?: KeyId | KeyId[];   // defaults; mars defaults for mars ids
 	when?: string;            // "chat && editorEmpty && !overlay"
 	slash?: { name: string; argumentHint?: string; complete?(prefix: string, ctx: TuiContext): Awaitable<AutocompleteItem[] | null> };
 	run(ctx: TuiContext, args?: string): void | Promise<void>;
@@ -916,7 +916,7 @@ export type TuiCommand = {
 export const TuiCommands = defineRegistry<TuiCommand>("p2.tui-commands", { conflict: "error" }); // key = command id
 ```
 
-- **Ids.** pi ids where the semantics match (`app.model.select`), otherwise `<plugin>.<verb>`.
+- **Ids.** mars ids where the semantics match (`app.model.select`), otherwise `<plugin>.<verb>`.
 - **Contexts.** `chat`, `sessions`, `overlay:<id>`, `editorFocused`, `editorEmpty`, `busy`, `compacting`, `searching`,
   `owner`, `guest`, `participant`. `when` is a small boolean grammar.
 - **Keymap rebuild.** pi-tui's `KeybindingsManager` has fixed definitions and only `setUserBindings`
@@ -929,10 +929,10 @@ export const TuiCommands = defineRegistry<TuiCommand>("p2.tui-commands", { confl
   ids. The runtime builds a slash-name index: a duplicate name disables the later command's slash form and is
   reported in `/hotkeys`. The command id stays usable.
 - **Discoverability.**
-  - Palette `p2.palette` (Ctrl+Shift+P and F1; unbound in pi).
+  - Palette `p2.palette` (Ctrl+Shift+P and F1; unbound in mars).
   - `/hotkeys`, generated by category and context, showing conflicts, launcher-owned keys and config paths.
   - `/` autocomplete; hints via `ctx.hints.key(id)`, a copy of `CMP/keybinding-hints.ts:34-48`.
-- **Compatibility.** pi `keybindings.json` (with legacy migration); unknown ids are kept and reported; guest-platform
+- **Compatibility.** mars `keybindings.json` (with legacy migration); unknown ids are kept and reported; guest-platform
   defaults.
 
 This is better than coding-agent's approach because one registry drives keys, palette, slash commands and help, with
@@ -943,11 +943,11 @@ against hardcoded key checks.
 
 - **Files.** `P2/src/runtime/tui-commands.ts` (`TuiCommand`, `TuiCommands`, the `when` parser, the dispatcher and the
   slash completion provider), `P2/src/runtime/tui-context.ts` (`TuiContext`, a superset of P2's `RenderContext`),
-  `P2/src/tui/keybindings.ts` (pi's `app.*` table per guest platform, the `KEYBINDINGS` overrides, legacy migration,
+  `P2/src/tui/keybindings.ts` (mars's `app.*` table per guest platform, the `KEYBINDINGS` overrides, legacy migration,
   key-id validation, privileged resolution), `P2/src/tui/core-commands.ts` (palette, `/hotkeys`, exit, reload, view
   toggles).
 - **`TuiCommand`** is the 6.3 shape plus `palette?: false` (hidden from the palette). `tuiFacet(name, factory,
-  commands)` registers a slot and its commands. Ids from pi's table always use pi's defaults (`keys` is ignored);
+  commands)` registers a slot and its commands. Ids from mars's table always use mars's defaults (`keys` is ignored);
   `tui.*` and launcher ids are rejected.
 - **`TuiContext`** (`runtime.ctx`): `host, theme, keys {manager, matches, getKeys}, hints {keyText, keyDisplayText,
   key, raw}, keyText, requestRender, settings, role, identity, navigate, view {expandedTools, showThinking}, commands
@@ -963,8 +963,8 @@ against hardcoded key checks.
 - **Reports** (`/hotkeys`): launcher keys lost to other bindings, plugin defaults dropped for privileged keys, command
   keys that pi-tui's transcript keys (`tui.altScreen.*` except the search-only ones) consume first, same-specificity
   overlaps (`canOverlap` checks satisfiability under the exclusive groups), invalid ids/`when`s, duplicate or invalid
-  slash names, unknown user ids (kept, as pi does) and preference problems.
-- **Ported actions.** `p2.stop` → `app.interrupt` (not while autocomplete shows, as pi's CustomEditor),
+  slash names, unknown user ids (kept, as mars does) and preference problems.
+- **Ported actions.** `p2.stop` → `app.interrupt` (not while autocomplete shows, as mars's CustomEditor),
   `p2.followUp`/`p2.dequeue` → `app.message.*`, `p2.models` → `app.model.select` (`/model`), `p2.tools` →
   `app.tools.expand`, `p2.thinking` → `app.thinking.toggle`, `p2.exit` → `app.exit` (`!editorFocused ||
   editorEmpty`; `/quit`), `p2.reload` → `p2.tui.reload` (unbound, `/reload`), `p2.sessions` keeps Ctrl+R in `chat`
@@ -972,11 +972,11 @@ against hardcoded key checks.
   `p2.palette`, `p2.hotkeys`. The editor runs `/name args` through the slash index before sending; unknown slash text
   is sent as a message.
 - **Deviations.**
-  - The palette is **F1 only**: Ctrl+Shift+P is pi's `app.model.cycleBackward` default (non-Windows).
+  - The palette is **F1 only**: Ctrl+Shift+P is mars's `app.model.cycleBackward` default (non-Windows).
   - Core commands come from a runtime-owned facet (`tuiCoreFacet`, loaded by the worker runtime) rather than a
     plugin, like the header/footer fallbacks (7.1); they still go through `TuiCommands`, so they are rebindable,
     listed and conflict-checked.
-  - Ctrl+N (old `p2.new`) is dropped: pi's `app.session.new` is unbound and Ctrl+N is its session-selector filter key.
+  - Ctrl+N (old `p2.new`) is dropped: mars's `app.session.new` is unbound and Ctrl+N is its session-selector filter key.
   - `app.model.select` and `app.session.new` require `owner` (guests cannot hold `Models` or create sessions).
 
 ---
@@ -1013,7 +1013,7 @@ export default defineFacet((host) =>
 | --- | --- | --- | --- |
 | `TuiSlots` | `screen:<name>`, `header`, `footer`, `widget-above:<plugin>`, `widget-below:<plugin>`, `composer:<plugin>` | `(ctx) => TuiSurface` | `Slots` (`P2/src/runtime/web.tsx:47`), `SlotList` prefixes (`P2/src/runtime/web.tsx:76`) |
 | `TuiCommands` | command id | section 6.3 | toolbar buttons, sheets |
-| `TuiToolRenderers` | tool name | pi `ToolRenderers` shape (`CA/core/extensions/types.ts:658`) with `ctx` | **new** web `ToolCards` replacing `P2/src/web/Chat.tsx:164` |
+| `TuiToolRenderers` | tool name | mars `ToolRenderers` shape (`CA/core/extensions/types.ts:658`) with `ctx` | **new** web `ToolCards` replacing `P2/src/web/Chat.tsx:164` |
 | `TuiToolRendererResolvers` | `<order>:<plugin>` | `ToolRendererResolver` with `next()` (`CA/core/extensions/types.ts:664-667`); run in key order, then `TuiToolRenderers`, then the generic card | — |
 | `TuiEntryRenderers` | entry kind | `(item, ctx) => Component` | chat-mode web rendering |
 | `TranscriptEntries` (existing, shared) | entry kind | pure `(data) => EntryDisplay` (`P2/plugins/chat/contract.ts:155`) | same registry. Chat-mode's pure function moves into a module imported by both `P2/plugins/chat-mode/web.tsx` and a new `P2/plugins/chat-mode/tui.ts`. |
@@ -1041,7 +1041,7 @@ providers may share a trigger character; they are consulted by priority.
 
 ### 8.1 How coding-agent does it
 
-- **Tool provisioning.** `ensureTool` (`CA/utils/tools-manager.ts:349`) finds fd/rg in `~/.pi/agent/bin`
+- **Tool provisioning.** `ensureTool` (`CA/utils/tools-manager.ts:349`) finds fd/rg in `~/.mars/agent/bin`
   (`CA/config.ts:639`) or on `PATH` (`CA/utils/tools-manager.ts:83-102`). Otherwise it downloads them (asset table
   `CA/utils/tools-manager.ts:29-68`, download `:258`). It skips the download when offline
   (`CA/utils/tools-manager.ts:361-364`) and on Termux (`:366-371`). Called at `IM:1088-1092`.
@@ -1083,9 +1083,9 @@ Index semantics:
 | --- | --- |
 | Files | Tracked + untracked, not ignored (git); otherwise all |
 | Directories | Derived from file paths' parent prefixes. Empty directories come from `list` (a single-level `openDirReader`) or the daemon op. |
-| Hidden | Included (pi passes `--hidden`); `.git` excluded |
+| Hidden | Included (mars passes `--hidden`); `.git` excluded |
 | Ignored | Excluded where `.gitignore` applies; `node_modules` excluded in walks |
-| Symlinks | Listed, not followed (no loops, no escape). pi's `--follow` is a deliberate difference. |
+| Symlinks | Listed, not followed (no loops, no escape). mars's `--follow` is a deliberate difference. |
 | Bounds | 50 000 entries, 4 MiB of listing, 10 s per rebuild, `WALK_DIRECTORIES` 5000 (`P2/plugins/workspace/environment.ts:19-30`) |
 | Truncation | `truncated: true` is surfaced; the client shows "partial index" |
 | Ranking | Copy of `TUI/fuzzy.ts` with a basename bonus, then shorter paths, then lexical; `kind` filter applied |
@@ -1142,7 +1142,7 @@ Requests are debounced (~80 ms), aborted when superseded, and inserted as `@path
 - **IME.** Ignore keys while `event.nativeEvent.isComposing`; never open the popover mid-composition.
 - **Chat mode.** `@pi` is the agent mention (`P2/plugins/chat-mode/contract.ts:49-51`). The provider never offers
   completions for a token that matches `MENTION`. While chat mode is on, file items are listed after a synthetic
-  "@pi — mention Pi" item. The TUI follows the same rule.
+  "@pi — mention Mars" item. The TUI follows the same rule.
 - **Both composers.** The existing-session composer and the new-session composer. Before the session exists there is
   no `FileIndex`; the new-session composer offers completion only after creation, or via the env directory listing
   for the chosen cwd (`Envs.listDirectory`, owner).
@@ -1192,7 +1192,7 @@ Node 26 (`P2/DEV.md`). Supporting server contracts always land before the UI tha
 only in the phase that implements it.
 
 Done: P0–P11 (see git history; the "As built" sections below describe them). P8, the daemon's `listFiles`, landed in
-pi 55df12bf6 and p2 52eff3371. Of P12, `Chat.shell` with `!`/`!!`, fork and clone, templates and `/skill:` (10.8) and
+mars 55df12bf6 and p2 52eff3371. Of P12, `Chat.shell` with `!`/`!!`, fork and clone, templates and `/skill:` (10.8) and
 the Mermaid transformer (10.7) are built. Open:
 
 | # | Work package | Size | Acceptance criteria | Status |
@@ -1218,20 +1218,20 @@ Where the implementation differs from the text above, and why:
 - **Sends while connecting.** Enter while the conversation reference is still connecting (after a reload or reconnect)
   is held and sent once the reference is live, with the same request ID; typing goes to the editor meanwhile. A read-only
   conversation refuses with a status line.
-- **Ctrl+C** follows pi exactly: clear the editor, a second press within 500 ms exits. It does not abort; Escape does.
+- **Ctrl+C** follows mars exactly: clear the editor, a second press within 500 ms exits. It does not abort; Escape does.
 - **Status lines** sit in the dock above the editor (at most three, a repeated message collapses into a count,
-  cleared on navigation and on send), not in the transcript as pi's `showStatus`/`showError`. Runtime notices are not
+  cleared on navigation and on send), not in the transcript as mars's `showStatus`/`showError`. Runtime notices are not
   conversation-scoped (they also occur on the sessions screen) and must not shift the transcript's reading position.
-- **Header** is pi's logo with the server origin and role instead of the version, and only hints whose keys are bound.
-  As in pi it is the first part of the transcript and scrolls away; other screens show it above the surface.
+- **Header** is mars's logo with the server origin and role instead of the version, and only hints whose keys are bound.
+  As in mars it is the first part of the transcript and scrolls away; other screens show it above the surface.
 - **Footer** (status plugin, `footer` slot): conversation stats from `pi.usage`, cache hit of the latest response,
   context tokens against the owner's model catalog (guests: tokens without a denominator, and the owner-only catalog is
   never requested), the session total labeled `session $x` when it exceeds the conversation's cost. The git branch
   came later (10.7).
-- **Tool renderers.** Shell: Durable reports the spill path as a diagnostic, not in `details`, so pi's truncation
+- **Tool renderers.** Shell: Durable reports the spill path as a diagnostic, not in `details`, so mars's truncation
   footer is not shown; the card's own elapsed clock is shown only for runs it watched. Edit: no local preview, the
   result's `details.diff`. Read: no pi-docs classification. Images: pi-tui's text fallback.
-- **Code mode card** is pi's renderer (script preview, the newest eight calls with JSON arguments, output without
+- **Code mode card** is mars's renderer (script preview, the newest eight calls with JSON arguments, output without
   Durable's `Script completed|failed / Wall time / Output:` header), extended with p2's live nested slots: depth
   indentation and a running call's newest output line. It replaces p2's earlier one-line summary format.
 - **Plugin renderers.** `artifact`, `send_file`, `subagent` and (since P4) `ports` cards ship as `tui.ts` of their
@@ -1253,14 +1253,14 @@ Where the implementation differs from the text above, and why:
   - `dequeueOwn()` withdraws the caller's queued inputs, chosen by the server-stamped author of each input's entry, in
     submission order, and returns `{restored, skipped}`; inputs placed or withdrawn meanwhile count as skipped. Other
     authors' inputs stay queued (they are not moved to drafts, unlike `stop`).
-- **`enabledModels`** is a p2 settings.json key (`P2/src/runtime/settings.ts`) with pi's pattern format: exact
+- **`enabledModels`** is a p2 settings.json key (`P2/src/runtime/settings.ts`) with mars's pattern format: exact
   `provider/modelId` or `modelId`, `*`/`?` globs over either, optional `:level`. `Models` version 2 exposes the raw
   patterns, the resolved `scopedModels` (`P2/plugins/models/scope.ts`) and `setEnabledModels` (owner).
 - **`FileIndex`** is its own plugin (`P2/plugins/file-index`) rather than code inside the workspace plugin, which
   another work stream owns. It consumes `WorkspaceBackend` unchanged: `query({kind:"files"})` (git ls-files or the
   bounded walk, with their bounds and private-path exclusion) for the index, directories derived from file paths,
   `query({kind:"list"})` for `list`. The index is cached per conversation (`FileIndexCache`, a worker local) and rebuilt
-  lazily when `changes` advanced, at most once per second. Ranking (`rank.ts`) is pi's `scoreEntry` (name exact 100,
+  lazily when `changes` advanced, at most once per second. Ranking (`rank.ts`) is mars's `scoreEntry` (name exact 100,
   name prefix 80, name substring 50, path substring 30, directories +10), then depth, length and name; p2 adds fuzzy
   matches (pi-tui `fuzzyMatch`) below every substring match, since there is no fd query. `/`, `~` and `..` prefixes
   complete nothing.
@@ -1270,21 +1270,21 @@ Where the implementation differs from the text above, and why:
 - **Selectors are overlays** (`ctx.overlay`, bottom-anchored, full width), not components swapped into the editor's
   place as in pi. Overlays already close on navigation, reload and plugin replacement, which gives P4's "reload during
   an overlay closes it cleanly"; the model screen is gone (a version-1 snapshot on it returns to chat or sessions).
-- **Models** (`P2/plugins/models/tui.ts`): pi's model selector (`P2/src/tui/components/selectors.ts`) with Tab
-  all/scoped, current and default badges and Ctrl+S (`app.models.save`) to set the default; pi's thinking selector
+- **Models** (`P2/plugins/models/tui.ts`): mars's model selector (`P2/src/tui/components/selectors.ts`) with Tab
+  all/scoped, current and default badges and Ctrl+S (`app.models.save`) to set the default; mars's thinking selector
   (`/thinking`, Ctrl+S `app.thinking.save`); `/model provider/id` switches at once; Shift+Tab cycles the model's
   levels (from `Chat.model`); Ctrl+P / Shift+Ctrl+P cycle the scope with its `:level`, else every signed-in model.
-  `/scoped-models` is a reduced copy of pi's selector: toggles, Ctrl+S saves exact `provider/modelId` patterns. Without
+  `/scoped-models` is a reduced copy of mars's selector: toggles, Ctrl+S saves exact `provider/modelId` patterns. Without
   a session a choice sets the default for new sessions. Guests (and owners before the catalog arrives) get a read-only
   status line. The catalog is not refreshed from the selector (the server keeps it; login is P6).
-- **Sessions** (`P2/plugins/sessions/tui.ts`): the sessions screen is pi's selector with the 1.17 adaptations.
+- **Sessions** (`P2/plugins/sessions/tui.ts`): the sessions screen is mars's selector with the 1.17 adaptations.
   Threaded sort nests a session's named subagent conversations (`Subagents`); selecting one opens that (session,
   conversation). Message hits (`Search`, owner, debounced) form a separate "Messages (literal matches)" group. Keys:
   Tab scope, `app.session.toggleSort`, `app.session.toggleNamedFilter` (pinned), `app.session.toggleArchived`
   (Ctrl+A), `app.session.delete` (archive with confirmation; restore in the archived scope), `app.session.rename`,
   `app.session.togglePath` (session IDs), `p2.session.pin` (Alt+P). They are registered commands whose `when` has four
   terms (`sessions && selector && !overlay && !creating`), so Ctrl+D archives here instead of `app.exit`.
-- **`/new [cwd]`** creates a session in the viewed session's env:cwd (or the given directory) and opens it, as pi's
+- **`/new [cwd]`** creates a session in the viewed session's env:cwd (or the given directory) and opens it, as mars's
   `/new` starts over in place; without a session the `+ New session` prompt asks for a directory. **`/name <title>`**
   renames (owner). **`/session`** (status plugin) lists the footer's numbers with their scopes (section 1.16).
 - **Chat**: `/compact [instructions]`, Escape aborts a running compaction (and stops a busy run; the compaction
@@ -1307,7 +1307,7 @@ Where the implementation differs from the text above, and why:
   session yet; the env directory listing alternative of 8.4 is not used). The FileIndex hold starts on focus and ends
   30 s after blur. Enter and Tab apply, arrows move, Escape closes ahead of send and stop; Tab without a path-like
   token keeps moving focus. IME: keys during composition are ignored and composition closes the list. `@pi` as a whole
-  token never completes (`MENTION_TOKEN`); the synthetic "@pi — mention Pi" item comes first while chat mode allows
+  token never completes (`MENTION_TOKEN`); the synthetic "@pi — mention Mars" item comes first while chat mode allows
   replies (`canReply`, which chat-mode sets only in chat mode). Documented as a p2 addition in
   `P2/docs/p2-notes.md` (Decisions).
 
@@ -1320,14 +1320,14 @@ Where the implementation differs from the text above, and why:
   settings, and patches that change nothing. The screen shows the file path and a leaf diff of `prefs.json`
   (`- path: old` / `+ path: new`, `prefsDiff`). The run re-reads the file, applies the patch (unknown and launcher-only
   keys survive untouched) and writes atomically (a fresh 0600 temp file renamed over `prefs.json`). The launcher's
-  watcher then posts the new preferences; a missing `~/.pi/p2-tui` is watched through its parent so a first save
-  applies too. pi's files are never written.
-- **`/settings`** (`P2/src/tui/settings.ts`, core command `p2.settings`): pi's `SettingsList` with the **G** keys of
-  1.14 (pi's labels, values and defaults) and the theme. Changes are collected and proposed as one patch when the
+  watcher then posts the new preferences; a missing `~/.mars/p2-tui` is watched through its parent so a first save
+  applies too. mars's files are never written.
+- **`/settings`** (`P2/src/tui/settings.ts`, core command `p2.settings`): mars's `SettingsList` with the **G** keys of
+  1.14 (mars's labels, values and defaults) and the theme. Changes are collected and proposed as one patch when the
   overlay closes. **Deviation:** no read-only server-settings section yet (no owner contract exposes
   `<data>/settings.json`); the footer points to `/model` and `/session`.
 - **Theme picker** (`ThemePicker`): `system`, the built-ins, custom themes from the launcher, and `automatic` (a light
-  and a dark theme, pi's pair setting). The preview pane renders sample Markdown, code, diff colors and a user message
+  and a dark theme, mars's pair setting). The preview pane renders sample Markdown, code, diff colors and a user message
   with its own `ThemeRef` (`ctx.prefs.previewTheme`); the live theme changes only after the save.
 - **`/keybindings`** (core command `p2.keybindings`): every command plus pi-tui's editor/transcript ids with their keys;
   Enter captures the next key (`parseKey`), Backspace unbinds (`[]`), Delete restores the default (`null`), Esc cancels;
@@ -1346,7 +1346,7 @@ Launcher actions (`P2/src/hosts/tui-actions.ts`, section 3.6b's table gains):
 | --- | --- | --- | --- |
 | `attach` | C | `{path?}` (`/attach [path]`; a dropped path pasted after `/attach`) | With a path: a first screen names it (the launcher resolves quotes, `file://`, backslash escapes, `~/`, relative to its own cwd). Without: the launcher's file picker (`TrustedUi.pick`: this computer's directories, filter by typing, Backspace up, Esc cancels; the worker sees nothing). Then the facts screen (path, size, type, session) and, after Enter/`y`, the upload. Result `{id, name, size, mimeType?}`, never the path. |
 | `attach.key` | K `p2.attach` (unbound) | — | Picker, facts, upload; the chip arrives through `attached`. |
-| `paste.key` | K `app.clipboard.pasteImage` (Ctrl+V) | — | pi's order: copied files (macOS) → facts and upload each; an image (wl-paste, xclip, native; png/jpeg/webp/gif) → a confirmation with type, size, generated name and session, then upload; else the clipboard text is pasted into the worker as a bracketed paste (controls except newline and tab removed). |
+| `paste.key` | K `app.clipboard.pasteImage` (Ctrl+V) | — | mars's order: copied files (macOS) → facts and upload each; an image (wl-paste, xclip, native; png/jpeg/webp/gif) → a confirmation with type, size, generated name and session, then upload; else the clipboard text is pasted into the worker as a bracketed paste (controls except newline and tab removed). |
 
 - **Reading local files** (`openLocalFile`, section 3.3 step 7): `open` with `O_NOFOLLOW | O_NONBLOCK`, `fstat` of the
   descriptor, regular files only (directories, FIFOs, sockets, devices and final symlinks are refused), the 25 MiB limit
@@ -1365,22 +1365,22 @@ Launcher actions (`P2/src/hosts/tui-actions.ts`, section 3.6b's table gains):
 
 ### 10.4a As built: P6 (login/logout)
 
-`P2/plugins/login/tui.ts` (owner; `when: owner`). `/login [provider]` lists `ProviderLogin.providers` (pi's provider
-selector), then the login method when there are several, then `LoginDialog`, a copy of pi's `LoginDialogComponent`
+`P2/plugins/login/tui.ts` (owner; `when: owner`). `/login [provider]` lists `ProviderLogin.providers` (mars's provider
+selector), then the login method when there are several, then `LoginDialog`, a copy of mars's `LoginDialogComponent`
 driven by the server's `LoginState` instead of callbacks. `/logout [provider]` lists providers with stored credentials.
 Both complete provider ids. One `ProviderLogin` hold spans the flow (the server cancels an unfinished login when the
 hold ends); the dialog's `dispose` (any overlay close: its own, navigation, reload, plugin replacement) cancels a
 running login, waits for it to settle and dismisses it.
 
 - **Notices.** `auth_url` and `device_code` show the address as text (and the code); `progress`/`info` as pi.
-  Server text is sanitized (`lineText`). Nothing is opened automatically (pi's `openBrowser` is gone): Enter (while
+  Server text is sanitized (`lineText`). Nothing is opened automatically (mars's `openBrowser` is gone): Enter (while
   no prompt waits) or `app.tools.expand` (while one does) asks the launcher for `openUrl` `{kind:"external"}` (https
-  only, shown in full in the launcher's screen); `app.message.copy` asks for `copy` with the address (pi's key; the
+  only, shown in full in the launcher's screen); `app.message.copy` asks for `copy` with the address (mars's key; the
   launcher suspends its own Ctrl+X while the dialog has focus, rule 3).
 - **Prompts.** `text` and `manual_code` use an `Input` (manual code with the web's help text, so pasting the
   redirect URL works remotely); `select` a `SelectList`. `secret` uses `SecretInput`
   (`P2/src/tui/components/secret-input.ts`): dots while typing, bracketed paste kept whole, no history, value wiped on
-  submit, never echoed (pi's `> value` line is gone), not part of the reload snapshot, and an answer error has the
+  submit, never echoed (mars's `> value` line is gone), not part of the reload snapshot, and an answer error has the
   value masked before it becomes a status line.
 - **Cancel and dismiss.** Escape cancels a running login; once finished, Enter or Escape closes and dismisses it.
 - **Infrastructure:** `ctx.overlay` now calls an optional `dispose()` of the component when its overlay closes for any
@@ -1435,7 +1435,7 @@ contract), so no plugin gains a dependency.
   diff, `/grep <text>` searches and opens the match at its line. All go through `Workspace` (the guide said
   `FileIndex` for `/files`; the workspace listing carries sizes and ignored flags and is one reference for the three).
   Participants only (`when: participant`), so view-only guests never acquire `Workspace`. Git's unified patch is
-  converted to pi's numbered diff lines (`piDiff`) for the copied `renderDiff`. Worker text is sanitized line by line
+  converted to mars's numbered diff lines (`piDiff`) for the copied `renderDiff`. Worker text is sanitized line by line
   (`lineText`). Comments, commits and uploads stay on the web.
 - **Owner panels** (`/logs`, `/notices`, `/retry-worker`, `/dev-reload`, `/envs`, `/ports`, `/devices`, `/share`)
   are `when: owner`; the notice and worker-status watches start only for owners. A test asserts that guests acquire
@@ -1530,13 +1530,13 @@ Tests: `P2/test/p2/tui-location.test.ts`. Code: `P2/plugins/sessions/tui-locatio
 - **Command completion** (`P2/src/runtime/tui-commands.ts`):
   - `slash.tabOnly` makes argument completion run on Tab only, never while typing, so Enter submits a typed path
     instead of accepting a listed subfolder.
-  - A forced Tab inside a command's argument now asks the command's `complete` (pi's argument completions).
+  - A forced Tab inside a command's argument now asks the command's `complete` (mars's argument completions).
     `P2/src/tui/completion.ts` falls back to file completion when the command has none.
 
 ### 10.7 As built: footer branch, Mermaid (P2 leftover, P12)
 
 - **Git branch** (`P2/plugins/workspace/tui.ts` `GitBranch`, slot `footer:branch`):
-  - The footer shows pi's `cwd (branch)` and "detached" for a detached HEAD, as pi does.
+  - The footer shows mars's `cwd (branch)` and "detached" for a detached HEAD, as mars does.
   - The branch comes from `Workspace.query({kind: "status"})`, asked when the conversation opens and again when
     `Workspace.changes` advances (500 ms debounce, one query at a time).
   - It is asked only by those who may hold `Workspace`: the owner and full-access guests. View-only guests are refused,
@@ -1544,11 +1544,11 @@ Tests: `P2/test/p2/tui-location.test.ts`. Code: `P2/plugins/sessions/tui-locatio
   - The status plugin reads it through `runtime.slots("footer:")` and does not depend on the workspace plugin.
   - Tests: `P2/test/p2/tui-p11.test.ts` (main, then a branch switch after a file change, then detached).
 - **Mermaid** (`P2/src/tui/components/mermaid.ts`, registered by the core facet as `00:mermaid`, ahead of plugin
-  transformers, as pi puts it before extension transformers):
-  - A copy of pi's transformer. The mode comes from the visitor's `markdown.mermaid` setting (default `streaming`, as
-    pi) and the colors from the instance theme. Thinking blocks are never transformed, too-wide diagrams keep their
+  transformers, as mars puts it before extension transformers):
+  - A copy of mars's transformer. The mode comes from the visitor's `markdown.mermaid` setting (default `streaming`, as
+    mars) and the colors from the instance theme. Thinking blocks are never transformed, too-wide diagrams keep their
     source, and invalid ones say why once complete.
-  - **Deviation:** `MarkdownTransformContext` carries `theme` and `settings`. pi's transformers close over its global
+  - **Deviation:** `MarkdownTransformContext` carries `theme` and `settings`. mars's transformers close over its global
     theme and settings manager; p2's are registry entries shared by all instances (5.4).
   - `grok-mermaid` 0.2.3 was checked to be pure (no dependencies; no fs, process, network or eval) and added to p2's
     dependencies. The lockfile changed only in p2's dependency list (the package was already installed for
@@ -1564,7 +1564,7 @@ Tests: `P2/test/p2/tui-location.test.ts`. Code: `P2/plugins/sessions/tui-locatio
 Tests: `P2/test/p2/shell.test.ts` (a bare session host with real Durable and a real local environment),
 `P2/test/p2/tui-shell.test.ts`.
 
-- **What pi does** (`IM:3346-3360`, `CA/core/messages.ts:30`):
+- **What mars does** (`IM:3346-3360`, `CA/core/messages.ts:30`):
   - `!cmd` runs a shell command and shows a bash execution component with its output streaming.
   - The result becomes a `bashExecution` message. It is in the model's context ("Ran `cmd`" plus the output) but starts
     no run. `!!cmd` is the same, excluded from the context.
@@ -1578,7 +1578,7 @@ Tests: `P2/test/p2/shell.test.ts` (a bare session host with real Durable and a r
   - **Who may:** anyone who may send, so full guests too, as tools run commands for them. Viewers watch.
     One-shot agents' conversations are refused (the `ReadOnlyConversations` check).
   - **Cancelling:** the command's author or the owner.
-  - **One at a time per conversation;** a second command is refused with pi's text (`SHELL_BUSY`).
+  - **One at a time per conversation;** a second command is refused with mars's text (`SHELL_BUSY`).
   - **Retries:** a call with the same request ID runs once.
 - **Worker** (`P2/plugins/chat/worker.ts`; the shared `Conversation` object runs it, `runShell`/`abortShell`):
   - The command runs on the conversation's environment, `Harness.environments.at(agent.cwd)`: local or remote, and
@@ -1590,7 +1590,7 @@ Tests: `P2/test/p2/shell.test.ts` (a bare session host with real Durable and a r
     under its own root context (the method returns at once). Closing the object cancels it.
   - When it ends, a Durable write submission places a `p2.shell` entry (`P2/src/runtime/shell.ts`, `ShellData`:
     author, command, output tail, `exitCode`, `cancelled`, `truncated`, `fullOutputPath`, `includeInContext`, `error`).
-  - **`!`:** the entry also carries a user message (the sender block plus pi's `bashExecutionToText`,
+  - **`!`:** the entry also carries a user message (the sender block plus mars's `bashExecutionToText`,
     `shellContextText`). The agent reads it on its next run, and no run starts now.
   - **`!!`:** the entry is display-only.
   - **Busy agent:** while the agent runs, the entry is placed at the run's next boundary, like any write.
@@ -1600,10 +1600,10 @@ Tests: `P2/test/p2/shell.test.ts` (a bare session host with real Durable and a r
 - **TUI** (`P2/plugins/chat/tui.ts`):
   - **Bash mode:** `!` text turns the editor border to `bashMode`. Enter on `!cmd`/`!!cmd` calls `Chat.shell`; a lone
     `!` is an ordinary message.
-  - **Live command:** a copy of pi's `BashExecutionComponent` (`P2/src/tui/components/bash-execution.ts`: instance
+  - **Live command:** a copy of mars's `BashExecutionComponent` (`P2/src/tui/components/bash-execution.ts`: instance
     theme, sanitized output, loader only while live, the author named for guests' commands). It is the transcript's
-    new `tail`, at the end like pi's chat flow.
-  - **Escape, in pi's order:** the running agent, then the running command, then bash mode's text (cleared), then the
+    new `tail`, at the end like mars's chat flow.
+  - **Escape, in mars's order:** the running agent, then the running command, then bash mode's text (cleared), then the
     double Escape.
   - **Entries:** finished `p2.shell` entries render with the same component, through an entry renderer registered by
     the core facet. The entry kind is the host's.
@@ -1615,7 +1615,7 @@ Tests: `P2/test/p2/shell.test.ts` (a bare session host with real Durable and a r
 
 #### `/skill:<name>` and prompt templates (as built)
 
-- **pi's behavior, copied** (`P2/plugins/prompt/templates.ts`, from `CA/core/prompt-templates.ts`,
+- **mars's behavior, copied** (`P2/plugins/prompt/templates.ts`, from `CA/core/prompt-templates.ts`,
   `CA/utils/frontmatter.ts` and `CA/core/agent-session.ts` `_expandSkillCommand`; no runtime imports): templates are
   `.md` files with optional frontmatter `description` (else the first line, 60 characters) and `argument-hint`, used
   as `/<name> args`; arguments split bash-style with quotes and substitute `$1`, `$@`, `$ARGUMENTS`, `${N:-default}`,
@@ -1623,8 +1623,8 @@ Tests: `P2/test/p2/shell.test.ts` (a bare session host with real Durable and a r
   `<skill name location>References are relative to <dir>.\n\n<body></skill>` plus the args. Skill expansion comes
   first, then the first template of that name; unknown names and unreadable skills stay as typed. Skills hidden from
   the model (`disable-model-invocation`) are still invocable, as in pi.
-- **Locations** (the session's environment, like skills): `<data>/prompts` locally or `~/.pi/p2/prompts` on a remote
-  environment (global, listed first, so it wins a name clash), then `<cwd>/.pi/prompts` (project). Only files directly
+- **Locations** (the session's environment, like skills): `<data>/prompts` locally or `~/.mars/p2/prompts` on a remote
+  environment (global, listed first, so it wins a name clash), then `<cwd>/.mars/prompts` (project). Only files directly
   in those directories; symbolic links are not followed; an unreadable or unparsable template is skipped. They are
   loaded with AGENTS.md and skills (`loadPromptResources`, `P2/plugins/prompt/context-files.ts`) and the prompt
   observer watches both directories, so changes reload live.
@@ -1636,9 +1636,9 @@ Tests: `P2/test/p2/shell.test.ts` (a bare session host with real Durable and a r
 - **TUI** (`P2/plugins/prompt/tui.ts`): a slot surface (no rendering) holds `PromptResources` of the viewed session
   for owners and full-access guests, and contributes a `TuiSlashSources` entry (`P2/src/runtime/tui-commands.ts`).
   Slash completion lists templates (with their argument hint) and `skill:<name>` after the commands, matching skills
-  by their bare name first (pi's order); an entry with a command's slash name is neither listed nor expanded. On
+  by their bare name first (mars's order); an entry with a command's slash name is neither listed nor expanded. On
   Enter, the chat editor expands a `/template` or `/skill:` through `ctx.commands.expand` (the worker method) and sends
-  the result (one small hook in `P2/plugins/chat/tui.ts`). A user message that is a skill block renders as pi's
+  the result (one small hook in `P2/plugins/chat/tui.ts`). A user message that is a skill block renders as mars's
   collapsed `[skill] <name>` block (`P2/src/tui/components/skill-invocation.ts`, a copy of
   `CMP/skill-invocation-message.ts`), expanded with the tool toggle (Ctrl+O), followed by the user's own text.
 - **Web**: the composer asks the `ComposerExpanders` registry (`P2/src/runtime/composer.ts`) before a send; the
@@ -1652,7 +1652,7 @@ Tests: `P2/test/p2/shell.test.ts` (a bare session host with real Durable and a r
 
 Tests: `P2/test/p2/fork-clone.test.ts` (real server and workers, fake provider), `P2/test/p2/tui-fork.test.ts`.
 
-- **What pi does:**
+- **What mars does:**
   - `/clone` duplicates the current session at its current position.
   - `/fork` opens a selector of the user's messages. The new session holds the history before the chosen message, and
     the editor receives that message's text.
@@ -1688,13 +1688,13 @@ Tests: `P2/test/p2/fork-clone.test.ts` (real server and workers, fake provider),
     the files are copied.
 - **TUI** (`P2/plugins/chat/tui.ts`, `tui-commands.ts`; in the chat plugin because the picker needs the loaded
   transcript and sessions cannot import chat):
-  - **`/fork`** (`app.session.fork`, owner) opens a copy of pi's `UserMessageSelectorComponent`
+  - **`/fork`** (`app.session.fork`, owner) opens a copy of mars's `UserMessageSelectorComponent`
     (`P2/src/tui/components/user-message-selector.ts`) over people's messages in the loaded transcript, newest
     selected. Enter forks, opens the new session with the message in its editor (its draft), and says "Forked to new
     session".
   - **`/clone`** (`p2.session.clone`, owner) opens the copy ("Cloned to new session").
   - **Double Escape:** `doubleEscapeAction: "fork"` opens the picker on a second Escape within 500 ms on an empty,
-    idle editor (owner); `"tree"` (the default, as in pi) opens `/tree` (`docs/tree.md`).
+    idle editor (owner); `"tree"` (the default, as in mars) opens `/tree` (`docs/tree.md`).
 - **Web:** no UI yet.
 
 ---

@@ -1,6 +1,6 @@
 # @earendil-works/pi-mcp
 
-A small, standalone Model Context Protocol client. It does not depend on the official MCP SDK or other pi packages.
+A small, standalone Model Context Protocol client. It does not depend on the official MCP SDK or other mars packages.
 
 The package provides a transport-neutral client core, stdio and Streamable HTTP transports, a stdio transport over a pipe to a program started elsewhere, and an in-memory testing transport.
 
@@ -70,7 +70,7 @@ const tools: AgentTool[] = (await client.listTools()).map((tool) => ({
 }));
 ```
 
-For applications that name tools like pi's coding agent: `createMcpToolName(server, tool, isTaken)` builds `mcp__<server>__<tool>`, limited to the characters and the 64-character length providers accept, with a hash suffix for long names and for names `isTaken` reports as used by another tool. `mcpNamespace(server)` is the prefix of a server's tool names. `normalizeMcpInputSchema()` turns an input schema into an object schema with `properties`, and `limitMcpContent(content, saveOutput)` keeps model-facing text within `MCP_OUTPUT_MAX_BYTES` (20KB) by cutting its middle; `saveOutput`, when given, stores the full text and returns the path the model can read it from.
+For applications that name tools like mars's coding agent: `createMcpToolName(server, tool, isTaken)` builds `mcp__<server>__<tool>`, limited to the characters and the 64-character length providers accept, with a hash suffix for long names and for names `isTaken` reports as used by another tool. `mcpNamespace(server)` is the prefix of a server's tool names. `normalizeMcpInputSchema()` turns an input schema into an object schema with `properties`, and `limitMcpContent(content, saveOutput)` keeps model-facing text within `MCP_OUTPUT_MAX_BYTES` (20KB) by cutting its middle; `saveOutput`, when given, stores the full text and returns the path the model can read it from.
 
 The [mcp-codemode example](https://github.com/earendil-works/pi/tree/main/packages/agent/examples/mcp-codemode) also forwards progress, passes `structuredContent` through, and lets `@earendil-works/pi-codemode` scripts call the tools.
 
@@ -130,7 +130,7 @@ Inject `McpOAuthStateStore` into `McpOAuthProvider` for durable credentials. The
 
 #### Sign-in in two halves
 
-`startMcpSignIn()` and `completeMcpSignIn()` run the sign-in pi uses, split so the second half can run in another request with the same state store (an `McpOAuthServerStore`: a state store with a refresh lock). The caller picks the redirect URI: a loopback one, or an https callback route of its own. `startMcpSignIn()` first tries to refresh the stored tokens under the store's refresh lock, so never call it while holding that lock; its `redirect` result is plain data the application can persist until the response arrives. Pass `completeMcpSignIn()` the same options, including the redirect URI you chose (not `started.redirectUrl`, which may be a variant specific to the MCP server).
+`startMcpSignIn()` and `completeMcpSignIn()` run the sign-in mars uses, split so the second half can run in another request with the same state store (an `McpOAuthServerStore`: a state store with a refresh lock). The caller picks the redirect URI: a loopback one, or an https callback route of its own. `startMcpSignIn()` first tries to refresh the stored tokens under the store's refresh lock, so never call it while holding that lock; its `redirect` result is plain data the application can persist until the response arrives. Pass `completeMcpSignIn()` the same options, including the redirect URI you chose (not `started.redirectUrl`, which may be a variant specific to the MCP server).
 
 ```typescript
 import { completeMcpSignIn, responseFromRedirectUrl, startMcpSignIn } from "@earendil-works/pi-mcp/oauth";

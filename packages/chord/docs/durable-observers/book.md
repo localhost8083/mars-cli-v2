@@ -51,7 +51,7 @@ it changes.
 
 ## Words used throughout
 
-**Durable** is pi's agent harness; a **Session** is its one line of atomic commits. **Storage** is Durable's storage
+**Durable** is mars's agent harness; a **Session** is its one line of atomic commits. **Storage** is Durable's storage
 interface; `Storage.commit(writes, adopt, context)` stores a batch and calls **`adopt(seq)`** once it is durable.
 Durable's **trackers** hold each loaded document's value in memory. **Internal observers** are Durable's own commit
 listeners (`observeCommits`): the conversation **view** mounts, the **task graph**, the **scheduler** and the

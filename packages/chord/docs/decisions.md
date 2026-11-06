@@ -10,7 +10,7 @@ first and win until the design is updated.
   keeps running unchanged with its data. Plugins are ported to p3 one at a time.
 - **No legacy data migration.** p3 starts empty: no import of p2's `catalog.sqlite`, `shares.sqlite` or subagents table.
 - **Chord v2 lives in `packages/chord/src/next`** (export `@earendil-works/chord/next`), developed on `private` only
-  (owner override of the "pi first" rule for this directory) and upstreamed to pi once stable; then `next/` replaces
+  (owner override of the "mars first" rule for this directory) and upstreamed to mars once stable; then `next/` replaces
   today's Chord and p2 is deleted. `next/` imports `../context`, `../delta`, `../json`, `../output` directly, so
   Durable's `Context`, `Draft` and `JsonValue` are the same modules and types in v2 (no copies, no type conflicts).
   (Replaces "Chord v2 lives inside p3". Now `src` and the package's root: "Chord v2 becomes the package's root".)
@@ -58,8 +58,8 @@ first and win until the design is updated.
   `transaction(change, context)`). Examples: `self.tx(fn, ctx)`, `handle.change(fn, ctx)` and keyed
   `handle.change(key, fn, ctx)`, `handle.retire(ctx)` and keyed `handle.retire(key, ctx)`, `chord(fn, context)`,
   `job.start(args, ctx, { key })`. Applied to design.md, the guide and the walkthrough; the frozen `step-*.md` and
-  `kernel.md` document the frozen code and keep its signatures. pi's `traceIn(context, options, fn)` (implemented in
-  `chord/context`) becomes `traceIn(options, fn, context)` in the same pi change as S1 (owner, 2026-10-21).
+  `kernel.md` document the frozen code and keep its signatures. mars's `traceIn(context, options, fn)` (implemented in
+  `chord/context`) becomes `traceIn(options, fn, context)` in the same mars change as S1 (owner, 2026-10-21).
 
 ## Hosts and placement
 
@@ -180,7 +180,7 @@ first and win until the design is updated.
   `/sqlite/cloudflare`): the `SqliteDatabase`/`SqliteExecutor` interfaces, the `node:sqlite` and Durable Object
   drivers, the migration runner and schema-prefix helpers. Durable imports them from Chord (it already depends on
   Chord, so no cycle) and re-exports them under its old paths so no Durable user breaks. Chord's SQLite document
-  storage uses the same drivers (`next/` imports `../sqlite` like `../output`). Done in pi first, then merged.
+  storage uses the same drivers (`next/` imports `../sqlite` like `../output`). Done in mars first, then merged.
 
 ## Derives and natives step
 
@@ -233,14 +233,14 @@ first and win until the design is updated.
   attributes, fn)` gives `fn` a child `ctx` (principal and `get` kept), so calls inside are parented correctly.
 - **One adapter per host:** (**superseded in part** by the adapter is a `TelemetryContext` with readonly `metrics`/`propagation` members, held only by hosts ("Telemetry types and review cleanup")) `createHost({ telemetry })`, the adapter implements `TelemetryContext` and optionally
   `TelemetryPropagation` and `TelemetryMetrics` (no split). Default NOOP.
-- **pi-telemetry additions** (pi first): `TelemetryCarrier = Record<string, string>` (opaque, W3C-compatible);
+- **pi-telemetry additions** (mars first): `TelemetryCarrier = Record<string, string>` (opaque, W3C-compatible);
   `TelemetryPropagation { inject(context) → carrier | undefined; extract(carrier) → TelemetryContext }` (absent,
   invalid or unknown carriers give the adapter's root, never throw; carriers are best effort: after an adapter change
   only links are lost); span links (`SpanOptions.links`, required `TelemetrySpan.addLink(link)`, a link targets a
   context); `NOOP_TELEMETRY_PROPAGATION`; the in-memory adapter implements propagation, links and metrics (carrier
   snapshots, no forced W3C fields); conformance fixture with optional `propagation`. No `isRecording` for now (it would
   break adapters, as would closure attributes).
-- **Metrics** (in the same pi change): `TelemetryMetrics { counter, upDownCounter, histogram }` with `add`/`record`
+- **Metrics** (in the same mars change): `TelemetryMetrics { counter, upDownCounter, histogram }` with `add`/`record`
   (synchronous, cheap, never throw; histogram `record` takes an optional context for exemplars), `InstrumentOptions`
   (description, unit), histogram boundaries, `NOOP_TELEMETRY_METRICS`, typed through `metrics` in telemetry schemas,
   low-cardinality attributes only.
@@ -262,15 +262,15 @@ first and win until the design is updated.
 - **Debugging:** (**superseded in part** by the SQLite telemetry store and `TelemetryStore` ("Telemetry store")) a JSONL trace adapter (bounded rotating file, batched asynchronous writes, drops when full, never
   blocks) and a text renderer of one trace now; a web trace viewer in the playground (span tree, durations, hosts,
   links, attributes, events; also usable standalone on a JSONL file) with the web shell.
-- **Durable** (pi): (**superseded in part** by "Durable and AI spans" and "Telemetry implementation decisions" (phase spans under the stored carrier; every input submission starts its own trace)) `HarnessOptions.telemetry`; an optional `trace` carrier field on submission and task records (the
+- **Durable** (mars): (**superseded in part** by "Durable and AI spans" and "Telemetry implementation decisions" (phase spans under the stored carrier; every input submission starts its own trace)) `HarnessOptions.telemetry`; an optional `trace` carrier field on submission and task records (the
   submitting call's or the parent task's carrier, rewritten with the record as other immutable fields are; JSON records,
   no migration, no format bump, old records simply have no link); task runs are child spans while their trigger runs in
   the same process, otherwise root spans linked to the stored carrier; Durable spans get their own schema. Persisted
   Chord jobs store their start carrier the same way.
-- **Own schema, no OTel GenAI (owner, 2026-10-18):** pi's AI and Durable telemetry uses its own typed schema
+- **Own schema, no OTel GenAI (owner, 2026-10-18):** mars's AI and Durable telemetry uses its own typed schema
   (`pi.ai.*`, `pi.durable.*`); the OTel GenAI conventions (development status, renames, streaming still `TODO`) are not
-  followed. An OTel adapter may translate pi's names to `gen_ai.*` at export. Model stream details are span events, never
-  per delta. The pi part of telemetry (propagation, links, metrics, typed metric schemas, `chord/context` telemetry
+  followed. An OTel adapter may translate mars's names to `gen_ai.*` at export. Model stream details are span events, never
+  per delta. The mars part of telemetry (propagation, links, metrics, typed metric schemas, `chord/context` telemetry
   member, `HarnessOptions.telemetry` type) is approved as diffed in `/home/badlogic/pi-telemetry`.
 - **Durable and AI spans (owner, 2026-10-18), partly open:** (**superseded in part** by pi-ai's option is `telemetry` (a span), not `telemetryContext` ("Telemetry types and review cleanup")) every span is short and in one process. Spans:
   `pi.durable.submit` (admission), `pi.durable.phase` (one invocation of any task's phase; fixed name, `task.name`,
@@ -556,7 +556,7 @@ validation and copies the v2 kernel added around Delta.
   absent document is a no-op, `tx.draft(…, { tags })` creates a missing document with its tags, existence is read
   outside the transaction. The R12 and R13 patterns are documented in `design.md` (section 9).
 - **R14, checkpoints (owner, 2026-10-19; **refined** by "Slice plan and slice-1 review decisions": required only for persisted documents):** no default, but `checkpointWhen` is required on every document
-  definition, in Chord and in Durable (a pi breaking change), so forgetting it is a type error. Durable's task-scoped
+  definition, in Chord and in Durable (a mars breaking change), so forgetting it is a type error. Durable's task-scoped
   documents (nested call, codemode run and journal) return false (they retire with their task); the codemode store
   checkpoints after 64 deltas; p2's small settings documents checkpoint on every write, its growing ones after 64.
 - **R15, old calls and migration (owner, 2026-10-19):** as in Durable: running calls keep their old handles until they
@@ -691,12 +691,12 @@ validation and copies the v2 kernel added around Delta.
 - **S1, adoption inside the commit step (owner, 2026-10-21; store review):** every owner's in-memory adoption runs
   synchronously inside the store's commit step, after the backend commit and before the next commit starts, so memory
   always shows a complete prefix of the log. Durable's `Storage.commit(writes, adopt, context)` gains a required `adopt`
-  callback (pi breaking change): every storage calls it synchronously once the commit is durable and before its next
+  callback (mars breaking change): every storage calls it synchronously once the commit is durable and before its next
   commit; the Session catches its own adoption error and fails; a rejection after adoption fails the Session without
   `tx.discard()`; `writeAtClose` passes a no-op; `StoreStorage` forwards `adopt` into the store's step; Chord objects
   adopt (pointer swap) the same way. Listeners stay where they are: after adoption, in each owner's continuation
   (unchanged), so their order across owners may differ from the seq order while every listener reads a complete
-  prefix. Checked against Durable's code (memory, JSONL, SQLite, GuardedStorage, writeAtClose); the pi change and its
+  prefix. Checked against Durable's code (memory, JSONL, SQLite, GuardedStorage, writeAtClose); the mars change and its
   test run come with the store work.
 - **S2, references to later commits (owner, 2026-10-21; store review):** no mechanism and no new rule. Ids are minted
   inside the transaction that creates them (Durable `tx.appendEntry` → `mintId`) and reach other code only after that
@@ -743,7 +743,7 @@ validation and copies the v2 kernel added around Delta.
   transaction that never committed was never seen outside it, S2; Durable's transactions are serialized on the
   Session line). In the store each owner's id counter starts at open above that owner's highest stored id (one index
   lookup per table; a replica taking over gets it the same way). Durable's existing storages already behave so; the
-  comment changes in the same pi change as S1.
+  comment changes in the same mars change as S1.
 - **S11, copying documents into a fork (owner, 2026-10-21; store review):** `StoreStorage` reconstructs the source
   documents of a `document.copy` before entering the commit step (reads of committed history outside the step) and
   enters it with plain creates carrying the base; Durable is unchanged. Safe because the source is a past state and
@@ -963,7 +963,7 @@ validation and copies the v2 kernel added around Delta.
   started after 150 frames, stop during a running call, a retire with a derive over it, a reload during a routine call,
   GC counts of retained revisions.
 - **W2, W3, watch fixes (owner, 2026-10-21; review round 4):** W2a: retirement is an explicit source event (last frame
-  `[["r", null]]`, then the end `retired`), never inferred from `value === null`; in Chord and in Durable alike (a pi
+  `[["r", null]]`, then the end `retired`), never inferred from `value === null`; in Chord and in Durable alike (a mars
   change; Durable's `CommittedWatch` stops treating `null` as retirement). W2b: only `routines.on` delivers the
   acquisition value: it calls its handler once with `watch.value` (ops `[["r", value]]`), then starts the watch and
   drains the buffered commits; a direct `watch()`/`start()` user keeps Durable's pattern (use `watch.value` first, then
@@ -1061,7 +1061,7 @@ validation and copies the v2 kernel added around Delta.
   check runs once per declared or edited method. Owner rule: no runtime checks of values TypeScript already guarantees
   (AGENTS.md); declaration checks of decided rules the types cannot express stay.
 - **Cost counters (owner, 2026-10-22):** the function that does the work counts it through its context (validation,
-  compilation, canonical JSON, a future counted `copyJson` with an optional context added in pi); call sites never
+  compilation, canonical JSON, a future counted `copyJson` with an optional context added in mars); call sites never
   count work done elsewhere. Counters stay plain totals without site labels: mainly a test guard (a test isolates one
   operation), plus a rough production number; attribution, if ever needed, comes from an event on the context's span.
   The error rebuild from the wire does not copy (fresh decoder output) and checks only the envelope.
@@ -1084,11 +1084,11 @@ validation and copies the v2 kernel added around Delta.
   "missing" for those two cases, TypeBox's message otherwise. A malformed error envelope from a peer throws a plain
   `Error`. `Principal` is a type alias (apps declare principals as type aliases, not interfaces).
 - **One watch-handle implementation, upstream first (owner, 2026-10-22; L2 spec):** Durable's `CommittedWatch` moves
-  into Chord's shared `src/watch.ts` (pi change, upstream first), generalized to serve native watchables too
+  into Chord's shared `src/watch.ts` (mars change, upstream first), generalized to serve native watchables too
   (`NativeWatchHandle`, listener `(value, context)`, overflow to the newest value); Durable uses it and its
   `observation.ts` goes away; Chord v2's L2 builds on it. Publications, derives, sinks, `constant` and `writable` stay in
   `next/` (v2 only). Durable's synchronous view-change hook (so a derive over a Durable view is marked in the commit
-  step) is a later pi change, with L3d.
+  step) is a later mars change, with L3d.
 - **L2 spec decisions (owner, 2026-10-22):** watchable state is JSON only (no bytes in documents, derives, reference
   members or any watchable; bytes only in method arguments and results and chunked transfers; Delta stays JSON-only;
   supersedes W4's "JSON plus bytes" for watchables). `mapShared` lives in v2's `watch/` until v2 goes upstream. C10 is
@@ -1224,7 +1224,7 @@ validation and copies the v2 kernel added around Delta.
   - Used by link hold members while the K=2 window is full (encoded once when an ack frees a slot) and by state
     watches (`Watch` over `(value, ops)`): a slow listener gets one call per batch with the folded ops and the newest
     value. Measured, listener taking 1 s: 438 calls and 3.39 MB of ops become 171 and 371 KB. The watch change is in
-    Chord's shared `src/watch.ts` (pi first); tests and `examples/04-watches` change with the contract.
+    Chord's shared `src/watch.ts` (mars first); tests and `examples/04-watches` change with the contract.
   - Unchanged: Durable's event stream (`watchEvents` batches are events: they keep their own queue until removed),
     `NativeWatch` (newest value), relays (drop + `reset { hold }`: parts are opaque).
   Animation: `packages/chord/docs/flow-control/fold/` (Radius 01m5nc9s24e9kscppen2fxgwye).
@@ -1239,7 +1239,7 @@ validation and copies the v2 kernel added around Delta.
   taken in one step, applied in one batch), entries flagged `reset: true` in the header for relays; a second `bound`
   only for slice 7's restarted objects. ~~Relayed calls are sent round-robin per origin while the worker's call window
   is full (each origin keeps its order).~~ (**superseded** by "Relay flow control per origin": a relay forwards calls at
-  once; each origin has its own N at the provider). The Durable conversation view's size on re-hold is a known cost until pi
+  once; each origin has its own N at the provider). The Durable conversation view's size on re-hold is a known cost until mars
   #11327 lands.
 - **Relay flow control per origin (owner, 2026-10-24):** supersedes per-hop acks, `reset { holds }`, relay recovery
   and id renumbering ("Flow control: an ack-clocked window" relay part, "Slice 4a review decisions" reset part). The
@@ -1323,7 +1323,7 @@ validation and copies the v2 kernel added around Delta.
   time across reloads. Kept separate from jobs (different lifecycle, reload behaviour and output). Open: the
   handover's bound (`closeTimeout`, whose default may drop from 30 s to 10 s, or its own).
 - **Slice 6 first decisions (owner, 2026-10-26):** (1) **Durable's internal commit observers run inside `adopt`**
-  (pi change, upstream first, built and reviewed before the slice): the Session's `observeCommits` listeners (view
+  (mars change, upstream first, built and reviewed before the slice): the Session's `observeCommits` listeners (view
   mounts, task graph, scheduler, submissions) move from `#publish`, after `Storage.commit` returned, into the `adopt`
   callback, so every Durable view changes inside the storage's commit step; with `StoreStorage` Durable's `adopt` runs
   inside the host's batch, and Chord follows Durable's views as sources marked in the step (W1). Reason: today a
@@ -1361,7 +1361,7 @@ validation and copies the v2 kernel added around Delta.
   listeners fire after host listeners; a commit the storage rejects after `adopt` is published (it is durable; a
   replica stays equal to storage; spec invariant 2 changes) and its waits resolve before the Session fails; with a
   storage that works after `adopt` (JSONL) the publication runs before `Storage.commit` resolves; a throwing telemetry
-  call is reported as `host_error` with callback `"telemetry"` and no longer rejects a durable commit. Nothing in pi or
+  call is reported as `host_error` with callback `"telemetry"` and no longer rejects a durable commit. Nothing in mars or
   p2 depends on the old orders (checked: p2's three `subscribeCommits` users).
   **After the reviews of the second build (owner, 2026-10-26):** one delivery rule for every watch: a watch delivers a
   frame in a microtask queued after the frame arrived, also when its listener was busy (Chord's shared `src/watch.ts`:
@@ -1375,7 +1375,7 @@ validation and copies the v2 kernel added around Delta.
   already queued folds frames that arrive later, so a watch can still deliver a commit before its host listeners, also
   in a shared commit step chained through promises); a complete fix (a late delivery queues itself again) would stall
   watchers behind a source that changes in every microtask. Decided instead (option b): **no ordering promise between
-  host `subscribeCommits` listeners and watch listeners** (independent observers; nothing in pi or p2 depends on their
+  host `subscribeCommits` listeners and watch listeners** (independent observers; nothing in mars or p2 depends on their
   order); waits and aborts still follow the host listeners by construction; the hop in `src/watch.ts` is reverted.
 - **Durable's synchronous observers (owner, 2026-10-26):** `observeConversation(id, observer, ctx)`,
   `observeTaskGraph(observer, ctx)` and `observeDoc(token, …, observer, ctx)` become Durable's public primitive: the
@@ -1401,7 +1401,7 @@ validation and copies the v2 kernel added around Delta.
   later write delivers the new incarnation as `[["r", value]]` on the same watch. A watch ends when its owner ends
   (`ended`): a Chord document's object, a Durable task document's task (the retirement call, then `ended`, in the same
   commit), the Session; and by `stop`, cancellation, failure or a throwing listener. Durable's watches change from
-  incarnation to address (breaking; nothing in pi or p2 watches a document that retires). Leaks: none new for task
+  incarnation to address (breaking; nothing in mars or p2 watches a document that retires). Leaks: none new for task
   documents (they end with their task and invocation); a forgotten watch of a session or conversation document that
   is retired for good stays until its taker's context, `stop` or the Session ends it (GC tests). Still to decide: the
   shape of the flag, the value an absent address shows to members, derives and `.value`, and the per-key source in a
@@ -1596,7 +1596,7 @@ validation and copies the v2 kernel added around Delta.
   "One vocabulary, groups 2 and 3"), same words: a
   value's watch says whether it can be computed, `ref.state` whether its object is reachable (values stay readable
   while loading). No new leaks: an open watch on a failed source holds what it held before and ends with its owner,
-  reference or context (GC test). Built: the shared `src/watch.ts` upstream in pi first (Durable's listeners adapt),
+  reference or context (GC test). Built: the shared `src/watch.ts` upstream in mars first (Durable's listeners adapt),
   then slice 6a (points 1-3 except registries; registries in slice 8).
 - **One vocabulary, group 1: the shared watch (owner, 2026-10-27: "yes"; vocabulary audit `/tmp/vocab-audit.md`,
   A1, A3, A8):** built in the same upstream change as the failure calls. (a) `WatchEnd` is tagged by `kind`, not
@@ -1623,7 +1623,7 @@ validation and copies the v2 kernel added around Delta.
   wire error format (`WireError`). (8) `HostError`: `failure` where the value is a `FailureCause`, `error` otherwise;
   positions `{ kind: "on" | "onLive" | "native", position }`. (9) Store types as Durable's: `history: "latest" |
   "rewindable"`, pages `{ items, next }`, a singleton's address has no key (`""` only in the column). (10) The
-  listener parameter is `call`; holds `served | relayed`; `put.v` is `version`. Durable's public API (pi upstream,
+  listener parameter is `call`; holds `served | relayed`; `put.v` is `version`. Durable's public API (mars upstream,
   with group 1): (11) `onReport(report)` with `report.kind` and `report.error`; `session_failed` is `storage_failed`.
   (12) `subscribeCommits` is `observeCommits` with the observer shape (`{ value, detach }`); a file watcher stops with
   `stop(ctx)`. (13) `CompactionFailure.reason` and `CompactionStatus.reason` are `trigger` (`pi.live`'s definition
@@ -1637,15 +1637,15 @@ validation and copies the v2 kernel added around Delta.
   throwing Chord's codes (6b), one retirement value ("One retirement mechanism" (2) stands).
   Added (owner, 2026-10-27, "lgtm"): Durable's `SessionEnd` and the `ReportFrom` argument of `runtime.report()` are
   tagged by `kind` too (neither is stored).
-- **Chord v2 and its docs live in pi upstream (owner, 2026-10-27: "we can put chord v2 in upstream", "the docs can
+- **Chord v2 and its docs live in mars upstream (owner, 2026-10-27: "we can put chord v2 in upstream", "the docs can
   all be public, and in upstream"):** `packages/chord/src/next`, `src/next-node`, `test/next`, `test/next-node` and
-  `docs/next` moved to pi `main` (`93029a0f1`), not exported until v2 has an entry point (experimental, noted in the
+  `docs/next` moved to mars `main` (`93029a0f1`), not exported until v2 has an entry point (experimental, noted in the
   changelog); the decision log moved from `apps/p2/docs/redesign-decisions.md` to `packages/chord/docs/decisions.md`;
   the root `AGENTS.md` carries the "Chord v2 Code Style" section. From now on every slice and every design doc change
-  goes to pi first (worktree of `upstream/main`, check, tests, push, CI, merge into `private`); only `apps/` stays
+  goes to mars first (worktree of `upstream/main`, check, tests, push, CI, merge into `private`); only `apps/` stays
   private.
 - **Slice 6b D1: `StoreStorage` and `durableView` live in Durable (owner, 2026-10-27: "they are only used if durable
-  is used"):** in Durable's own `src` (an ordinary pi module, now that Chord v2 is upstream), importing
+  is used"):** in Durable's own `src` (an ordinary mars module, now that Chord v2 is upstream), importing
   `@earendil-works/chord/next` (Chord's `./next` export comes with them; now the root export). No package cycle: Durable already depends on
   Chord, Chord imports nothing of Durable (S13). Durable's conformance suite runs in Durable's tests and CI.
 - **Slice 6b D2: Durable's records are ordinary declared tables of the store (owner, 2026-10-27: "a, that's the whole
@@ -1701,7 +1701,7 @@ validation and copies the v2 kernel added around Delta.
   after `withinMs`; a crash loses what is not stored. Only run state documents for now.
 - **Slice 6b D9: `self.follow(attach)` follows Durable's views (owner, 2026-10-27: "sounds good"):** a generic Chord
   primitive, no `durableView` module in Durable: `attach(observer, ctx)` returns `Promise<{ value, detach }>`
-  (Durable's `Observation`; its observers have Chord's watch shapes since pi `5f312dac4`). Chord makes the observer,
+  (Durable's `Observation`; its observers have Chord's watch shapes since mars `5f312dac4`). Chord makes the observer,
   attaches during activation (early calls held, `value` the start value), detaches at the attempt's end; calls inside a
   batch mark the source in the step, calls outside one are grouped into one batch on the next microtask; a rejected or
   `undefined` attach fails the activation as a failed dependency; Durable's `failed` end ends the watches `failed`.
@@ -2158,7 +2158,7 @@ validation and copies the v2 kernel added around Delta.
   is deleting that subpath). Not omptype (its validator compiles with `new Function`; its 10.7k lines are mostly
   ArkType's API). Open: which validator (measure `@cfworker/json-schema` and TypeBox against the official
   JSON-Schema-Test-Suite and Chord's argument checks first), and moving `Type` out of pi-ai's main export.
-  **Built** (owner, 2026-10-31: "clone pi add the package, done"; pi `fab2c53`): `packages/schema`,
+  **Built** (owner, 2026-10-31: "clone mars add the package, done"; mars `fab2c53`): `packages/schema`,
   `@earendil-works/pi-schema`: `compile(schema, { draft, formats, schemas })` with `check` (narrowing) and `errors`
   (JSON Pointer paths), Chord-style builders typed with `Static`, formats as the opt-in `./formats` entry, leaf and regex
   checks shared through weak caches (GC-tested); its own closure-compiled validator, chosen after measuring
@@ -2349,10 +2349,10 @@ validation and copies the v2 kernel added around Delta.
   `watch` and `registry`, releasing everything on dispose, calling one `changed` callback the app wires to its redraw
   (one line with pi-tui; any library works). p2's retry with backoff for gone references is not carried over (v2
   references wait and rebind by themselves). No pi-tui dependency.
-- **`chord.plugins` is a package's manifest of plugins, as pi's (owner, 2026-11-01: "yes"; slice 12 review, Opus H1;
+- **`chord.plugins` is a package's manifest of plugins, as mars's (owner, 2026-11-01: "yes"; slice 12 review, Opus H1;
   refines "The plugin model ... imports and builds" (Imports) and `slice-12.md` §2, §5):** a package (npm, git, local)
   declares the plugins it provides in its `package.json`, `"chord": { "plugins": ["./notes", "./search"] }` (globs and
-  exclusions as pi's `pi.extensions`); installing it picks up exactly those folders. Without the field discovery is
+  exclusions as mars's `pi.extensions`); installing it picks up exactly those folders. Without the field discovery is
   conventional: the package is one plugin when its top has facet files, else its subfolders with a `package.json`.
   Depending on a plugin inside a multi-plugin repository is an ordinary dependency on the whole repository (npm version
   or `github:bob/plugins#<commit>`, installed by plain npm), imported by path into it (`@bob/plugins/notes/contract.ts`)
@@ -2370,8 +2370,8 @@ validation and copies the v2 kernel added around Delta.
 - **p3 meeting, 2026-11-02 (Mario and Armin; Armin's summary, relayed by the owner):** session sync: the session
   repository talks to the server process to enumerate sessions; the session index in the server is updated by the
   worker from events and sent to the server by RPC. Sync to R2 goes through Radius: Radius keys each session by id and
-  keeps its last sequence number, tells pi which sessions it has with their last sequence numbers (optimization: time
-  of last sync), and pi sends the delta commit log from that sequence number; R2 stores the SQLite file and the commit
+  keeps its last sequence number, tells mars which sessions it has with their last sequence numbers (optimization: time
+  of last sync), and mars sends the delta commit log from that sequence number; R2 stores the SQLite file and the commit
   log (SQLite DO to R2); sessions have an owner id. The index is a Chord table replicated like sessions; its entry is
   updated only on a session metadata change, a session idle-state change and a subagent idle-state change. p3: each
   host (server, worker, tui, web) has a kernel loading the plugins with contribution points via registries; p2's look
@@ -2389,7 +2389,7 @@ validation and copies the v2 kernel added around Delta.
 - **p3 notes, 2026-11-02 (owner):** subagents may start with the main agent's context: `context: "inherit"` forks the
   parent conversation (Durable's `conversation.fork`) at the last entry before the assistant message with the spawning
   call; model, tools and location may differ; the tool's description names the cost (prompt cache only with the same
-  model). pi's `/tree` (in-session branches) is wanted for p3: proposed as forks inside the session's store (edit an
+  model). mars's `/tree` (in-session branches) is wanted for p3: proposed as forks inside the session's store (edit an
   earlier message to fork, a branch list to switch; a full navigator and branch summaries later).
 - **Sync applies batches with the host stopped (owner, 2026-11-02: "sure"; sync example `60-session-sync`):**
   `applyBatch` refuses while a host holds claims on the store; the sync layer stops the session's worker, applies,
@@ -2450,7 +2450,7 @@ validation and copies the v2 kernel added around Delta.
   `Message`), `t.message` takes only keys whose arguments are JSON scalars, and the theme choice and the locale choice
   share one per-principal preference store (`src/surfaces/preference.ts`).
 - **Chord v2 becomes the package's root (owner, 2026-11-03: "src/old", "subpaths", "yes", "yes", "no, chord is
-  wip"; for merging pi-private into pi this week; trial `/home/badlogic/chord-root-move/report.md`):** `src/next` is
+  wip"; for merging pi-private into mars this week; trial `/home/badlogic/chord-root-move/report.md`):** `src/next` is
   the package's `src` (its main export), the Node parts `src/next-node` are `src/node` with short subpaths (`/http`,
   `/workers`, `/plugins`, `/plugins/runtime`, `/app`, and slice 11's `/web`, `/surfaces`, `/react`, `/tui`,
   `/tui/launcher`; `/surfaces` was `/next/web/server`, renamed in the run because it exports the terminal surface's
@@ -2608,7 +2608,7 @@ validation and copies the v2 kernel added around Delta.
   a plugin's `dependencies` are installed into its own `node_modules` (`npm install --ignore-scripts`) and bundled into
   each facet that imports them (host packages, its `peerDependencies`, stay external and are passed in). On Node a
   plugin may keep named packages external with an explicit list in its `package.json` (`"chord": { "external": [...] }`):
-  server and worker facets then load them from the plugin's `node_modules` (`createRequire`, as pi 1.0 loads extension
+  server and worker facets then load them from the plugin's `node_modules` (`createRequire`, as mars 1.0 loads extension
   dependencies), native addons included; they stay in Node's module cache until the process ends, so a new version
   takes effect after a restart. A browser or TUI facet importing an external package fails to build. Slice 7b
   (the loader).
@@ -2692,7 +2692,7 @@ validation and copies the v2 kernel added around Delta.
   round 1 and shown to the owner (not his quote): `StoreStorage.close` waits for its commits only (its reads go straight
   to the store, which stays open).
 - **The performance and memory bar, and converging reviews (owner, 2026-10-27: "yes"):** supersedes "as good as
-  HEAD in everything" for Chord v2 slices and pi changes. CPU: each hot path (calls, changes, watches, links) within
+  HEAD in everything" for Chord v2 slices and mars changes. CPU: each hot path (calls, changes, watches, links) within
   about 5% of HEAD, measured in bursts with alternating processes pinned to one CPU; worse is fixed or goes to the
   owner with numbers. Memory: allocation per operation and memory retained after GC no worse than HEAD beyond noise,
   with GC probes for everything that must be collected (ended objects, released references, closed hosts, watches on
@@ -2720,7 +2720,7 @@ validation and copies the v2 kernel added around Delta.
   `BEGIN`; canonical `set` vocabulary with an explicit null for clears. (7) `int` columns kept in the safe range by a SQL
   `CHECK` (an out-of-range result in the step is fatal, accepted), the JS evaluator checking the same. (8) The outbox
   floor (`read(afterSeq)` valid from the floor to `lastSeq`). (9) The manifest carries `nextDocumentId`. (10) A bounded
-  LRU for `chord/sqlite/node`'s prepared statements (pi change). (11) Slots keep `valueVersion` and `storedVersion` (as
+  LRU for `chord/sqlite/node`'s prepared statements (mars change). (11) Slots keep `valueVersion` and `storedVersion` (as
   Durable's `LoadedDocument`). (12) An admitted commit of a failing object adopts and publishes once (Sol, Fable). (13)
   Retiring a `latest` record deletes its row. (14) One host per store. The rest: section 15 of the spec. Carry-over to
   slice 7 recorded in slices.md.
@@ -2806,7 +2806,7 @@ validation and copies the v2 kernel added around Delta.
   20, `changes()` 1 and 10). Measured in workerd: `SELECT changes()` costs about 1.5 µs per statement and reads or
   writes no billed rows, so making every `run` count would nearly double a small write on Durable Objects for callers
   that need no count (Durable's `SqliteStorage`): hence a separate method (option 2, owner). Name `runCounted`
-  (owner). pi `8025c414d` (upstream first), with a real Durable Object test in Durable's workerd suite.
+  (owner). mars `8025c414d` (upstream first), with a real Durable Object test in Durable's workerd suite.
 - **Store errors: Durable's rule (owner, 2026-10-26; slice 6a spec review blocker 3; **superseded in part** by "Slice 6b
   D4: the store has Durable's Storage semantics": a step failing before `COMMIT` rejects only its commit):** any backend error in a commit
   step is `storage_failed` (the store stops, every later commit and read rejects `unavailable/storage_failed`, a new
@@ -3001,7 +3001,7 @@ validation and copies the v2 kernel added around Delta.
   compressor compress parts above 16 KiB at their origin; browsers send uncompressed and inflate asynchronously with
   `DecompressionStream`, holding later messages of the link in order (bounded by the window and N; acks after apply).
 - **Slice 4a approved (owner, 2026-10-24):** `packages/chord/docs/slice-4a.md` as revised after the reviews. Build
-  order: the pending queue in Chord's shared code first (pi, upstream), then the slice by a fresh Opus builder (`s4`).
+  order: the pending queue in Chord's shared code first (mars, upstream), then the slice by a fresh Opus builder (`s4`).
 - **Slice 4a review decisions (owner, 2026-10-23; Astra's and Fable's spec reviews, `/tmp/s4a-review-*.md`):**
   supersedes in part "Slice 4 split and first decisions" (resets as `r` ops). A `hold` carries the address the caller
   computed; relays route by address and never need the contract or parse params. A `hold` carries `principal?` and
@@ -3228,7 +3228,7 @@ From `research/chord-on-durable-objects.md`, adopted for the Chord v2 kernel bec
 
 - **`HarnessOptions.models` and `settings` accept a function** (`() => Models`, `() => HarnessSettings`), like
   `env`; a plain object is still accepted. Internally both are stored as functions; generation, hooks and tools get
-  the function's current return value. Replaces p2's `Proxy` around the registry entry. Done in pi main first, then
+  the function's current return value. Replaces p2's `Proxy` around the registry entry. Done in mars main first, then
   merged into `private`.
 - Models and environments reach the harness through registry entries (functions) registered by the objects that own
   their natives; the `Harness` object opens Durable itself (no host value) and looks the entries up at each use.

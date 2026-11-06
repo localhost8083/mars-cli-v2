@@ -29,7 +29,7 @@ await plugins.rollout([plugins.step("server", server), workers.step("workers")],
   bundled, `peerDependencies` are host packages, `"chord": { "external": [...] }` keeps named packages external in
   Node builds (loaded from the plugin's `node_modules`, native addons included; they stay in Node's module cache until
   a restart). A package's `"chord": { "plugins": ["./notes", "plugins/*", "!plugins/draft"] }` lists the plugin
-  folders it provides (paths, globs and `!` exclusions, as pi's `pi.extensions`; `.` the package itself); without it
+  folders it provides (paths, globs and `!` exclusions, as mars's `pi.extensions`; `.` the package itself); without it
   the package is one plugin when its top has facet files, else its subfolders with a `package.json` (decision
   "`chord.plugins` is a package's manifest of plugins"); a listed folder inside another listed one is a problem. One file per facet kind the app names (`server.ts`, `worker.ts`,
   `web.tsx`, `tui.ts`; `.ts`, `.tsx`, `.js` or `.mjs`), its default export a facet; a plugin with no facet file holds

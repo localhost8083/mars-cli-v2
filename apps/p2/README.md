@@ -5,7 +5,7 @@
 > **p2 is a prototype. It will be gone soon.** It is not supported, its data formats and APIs change without notice,
 > and it will be replaced. Do not build on it or run it for anything you depend on.
 
-A self-hosted Pi Durable UI built from independent [Chord](../../packages/chord) plugins. Owners have full agent and
+A self-hosted Mars Durable UI built from independent [Chord](../../packages/chord) plugins. Owners have full agent and
 shell control on that server and its workers; this is not server-side filesystem isolation. Downloaded TUI facets run in a
 locked-down worker on the visitor's machine.
 
@@ -20,7 +20,7 @@ cd apps/p2
 npm start
 ```
 
-Open http://127.0.0.1:8788. `PORT` changes the port; `P2_DATA_DIR` changes the default data directory `~/.pi/p2`.
+Open http://127.0.0.1:8788. `PORT` changes the port; `P2_DATA_DIR` changes the default data directory `~/.mars/p2`.
 `P2_FAKE=1 npm start` uses a fake provider for demos, but tools still act on real files.
 See [development notes](docs/p2-notes.md) for dev mode, architecture and testing.
 Code mode scripts can orchestrate one-shot agents (`tools.agent`); [docs/workflows.md](docs/workflows.md) has workflow
@@ -117,7 +117,7 @@ npm run tui -- https://your-domain --owner-link 'https://your-domain/owner#<toke
 
 Direct loopback auto-signs in as the device owner without a link prompt; a proxy marker cannot use that path.
 For remote URLs (HTTPS required), get an owner link on the host, then pass `--owner-link` or paste it at the prompt.
-The TUI stores only its cookie per origin in `~/.pi/p2-tui/config.json` (0600, directory 0700;
+The TUI stores only its cookie per origin in `~/.mars/p2-tui/config.json` (0600, directory 0700;
 `P2_TUI_CONFIG_DIR` overrides it). It never stores the consumed invitation. `P2_TUI_OWNER_LINK` is an optional
 alternative to an argument. Links must match the selected origin and put the token in the fragment only.
 Expired/revoked credentials prompt again on the next launch. Basic-auth flags, environment and saved passwords
@@ -139,8 +139,8 @@ from an in-memory data URL. Worker stdout/stderr are captured and discarded. Hea
 worker environment-data/BroadcastChannel access, parentPort exposure and process-signaling/report controls are also
 disabled. The entire worker fs/fs-promises function facade is closed: inherited numeric descriptors must not read
 stdin or bypass stdout/stderr capture. Permission drops still protect JSON/require/file module loading.
-Keybindings, theme and display settings are the visitor's own: the launcher reads pi's `~/.pi/agent/keybindings.json`,
-`settings.json` and `themes/*.json` plus `~/.pi/p2-tui/prefs.json`, validates a whitelisted subset and posts it to the
+Keybindings, theme and display settings are the visitor's own: the launcher reads mars's `~/.mars/agent/keybindings.json`,
+`settings.json` and `themes/*.json` plus `~/.mars/p2-tui/prefs.json`, validates a whitelisted subset and posts it to the
 worker as data (no paths, env or commands); the server's `TuiPreferences` (`<P2_DATA_DIR>/tui.json`) only supplies
 defaults below them and never privileged bindings. The worker never reads files. Clipboard writes, opening URLs, downloads,
 the external editor and Ctrl+Z are launcher actions under a grant (the visitor's own key, or a confirmation in a

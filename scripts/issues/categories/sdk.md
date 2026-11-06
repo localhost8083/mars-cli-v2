@@ -3,7 +3,7 @@ owner:
 ---
 # sdk
 
-Embedding pi and non-interactive modes.
+Embedding mars and non-interactive modes.
 
 In:
 - createAgentSession, AgentSession public API, ModelRuntime.

@@ -100,4 +100,4 @@ Settings live in `.mars/` (project) and `~/.mars/` (global).
 
 ## License
 
-[MIT](LICENSE) — forked from [pi](https://github.com/earendil-works/pi) by Mario Zechner. Rebranded and maintained as MARS CLI with the MarsAI provider.
+[MIT](LICENSE) — forked from [mars](https://github.com/earendil-works/pi) by Mario Zechner. Rebranded and maintained as MARS CLI with the MarsAI provider.

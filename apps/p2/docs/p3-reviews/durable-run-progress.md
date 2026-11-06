@@ -1,7 +1,7 @@
 # Durable: split `pi.live` into `pi.run` and `pi.progress`, with deferred persistence for progress
 
-Status: **proposal, owner wants it (2026-10-23), pending a full review by Astra and Fable**. A breaking change in pi's
-Durable (`packages/durable`), upstream first; pairs with pi #11327 (windowed view, `runFailure`, removing
+Status: **proposal, owner wants it (2026-10-23), pending a full review by Astra and Fable**. A breaking change in mars's
+Durable (`packages/durable`), upstream first; pairs with mars #11327 (windowed view, `runFailure`, removing
 `watchEvents`) and #11139 (a run cut off by repeated crashes ends visibly).
 
 ## Problem

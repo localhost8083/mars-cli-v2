@@ -187,7 +187,7 @@ never overlap: chain or drop stale results); text compares like JS strings; pref
 :::
 
 # What comes next {#next part="Where it stands"}
-Book "What's Next"; log entries. Must cover: everything decided on 2026-10-21; the pi change (adopt argument, Session
+Book "What's Next"; log entries. Must cover: everything decided on 2026-10-21; the mars change (adopt argument, Session
 rejection handling, mintId wording, traceIn context last); the store in packages/chord/src (about 1,650 lines
 estimated); StoreStorage passing Durable's conformance suite; the sync layer later; open points (new id of a split
 session, chunk size, whether IndexedDB is needed while sqlite-wasm covers the browser).

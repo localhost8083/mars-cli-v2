@@ -293,7 +293,7 @@ return {
   outcome unknown; nothing is rerun automatically.
 - **Keep-alive and relocation:** running and unsettled runs count as activity.
 - **No write amplification**, as in Durable: a bounded output window (`OutputBuffer`), adaptive throttling (`Progress`),
-  deltas only; both are in `@earendil-works/chord/output` (B: pi `4a5d37291`).
+  deltas only; both are in `@earendil-works/chord/output` (B: mars `4a5d37291`).
 - **Shorthands** for single steps: `job.start(args, ctx, opts?)`, `handle.change(ctx, key?, fn)` (one document,
   loaded before the synchronous `fn`), `handle.retire(ctx, key?)`. Several of them atomically together: `self.tx`.
 - **Not jobs:** request and response work that may die with its caller is a method call (an env test); input into

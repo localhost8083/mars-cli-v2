@@ -3,7 +3,7 @@ owner:
 ---
 # prompt
 
-What pi tells the model.
+What mars tells the model.
 
 In:
 - System prompt assembly, tool descriptions and guidelines.

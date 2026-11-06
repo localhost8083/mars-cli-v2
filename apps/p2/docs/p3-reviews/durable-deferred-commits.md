@@ -1,7 +1,7 @@
 # Durable: deferred storage of throttled commits
 
 Status: **proposal for review** (2026-10-24). Replaces the `pi.run`/`pi.progress` split
-(`durable-run-progress.md`, kept for its reviews). A pi change in `packages/durable`, upstream first. No schema change,
+(`durable-run-progress.md`, kept for its reviews). A mars change in `packages/durable`, upstream first. No schema change,
 no change for renderers.
 
 ## Problem

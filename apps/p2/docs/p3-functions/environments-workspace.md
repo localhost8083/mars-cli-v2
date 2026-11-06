@@ -118,7 +118,7 @@ Read-only map of what the app must do in environments, execution, terminals, wor
 
 | domain | function | data | durability | who | where | depends on |
 |---|---|---|---|---|---|---|
-| idx | `@` completion: rank like pi (exact, prefix, substring, then fuzzy), dirs +10, limit 20 (max 100), kind filter | index ≤ 50k items | R (cache, kept 60 s) | O, GW | Wkr, Web, TUI | listing |
+| idx | `@` completion: rank like mars (exact, prefix, substring, then fuzzy), dirs +10, limit 20 (max 100), kind filter | index ≤ 50k items | R (cache, kept 60 s) | O, GW | Wkr, Web, TUI | listing |
 | idx | Tab directory listing for path completion | ≤ 2000 entries | E | O, GW | Wkr, TUI, Web | folder list |
 | idx | completion refuses paths outside the cwd (`/`, `~`, `..`) | – | – | S | Wkr | – |
 | idx | build from the env's own listing, else from git/walk; at most one rebuild per second while files change; discarded after a move | – | R | S | Wkr | exec env, change notifications |

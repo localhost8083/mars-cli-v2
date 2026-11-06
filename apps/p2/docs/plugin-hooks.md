@@ -292,14 +292,14 @@ Every factory is instantiated when registered (`:480`), rendered or not.
 
 ### 5.2 Commands, keys, slash
 
-`TuiCommands` (`src/runtime/tui-commands.ts:29-49`): key = command id (pi ids such as `app.model.select` where the
+`TuiCommands` (`src/runtime/tui-commands.ts:29-49`): key = command id (mars ids such as `app.model.select` where the
 meaning matches, else `<plugin>.<verb>`; `tui.*` and launcher ids are refused, `:260`). Value: `title`, `category`,
 `keys`, `when`, `slash: {name, argumentHint, complete, tabOnly}`, `palette`, `run(ctx, args)`.
 
 - `when` grammar (`:65-113`): `&&`, `||`, `!`, parentheses over terms: screen names, `owner`/`guest`, `connected`,
   `overlay`, `overlay:<id>`, and the active surface's `contexts()` (`src/runtime/tui.ts:403-411`). More terms win.
 - Key conflicts, launcher-owned keys, slash collisions are reported in `/hotkeys`, never thrown (`:248-330`).
-- Visitors rebind ids in pi's `keybindings.json` or `prefs.json`; server defaults in `tui.json`.
+- Visitors rebind ids in mars's `keybindings.json` or `prefs.json`; server defaults in `tui.json`.
 
 ```ts
 // plugins/artifacts/tui.ts:192
@@ -314,11 +314,11 @@ Prompt registers templates and skills (`plugins/prompt/tui.ts:87`).
 
 | Registry | Key → value | Order | Users |
 | --- | --- | --- | --- |
-| `TuiToolRenderers` | tool name → pi `ToolRenderers` (`renderCall`, `renderResult`, `renderShell`; `src/tui/tools/types.ts:15-62`) | overrides built-ins | artifacts, ports, send-file, subagents |
+| `TuiToolRenderers` | tool name → mars `ToolRenderers` (`renderCall`, `renderResult`, `renderShell`; `src/tui/tools/types.ts:15-62`) | overrides built-ins | artifacts, ports, send-file, subagents |
 | `TuiToolRendererResolvers` | `<order>:<plugin>` → `(toolName, next) => renderers` | key order, then the registry, then built-ins (`src/tui/tools/index.ts:20-28`) | quiet-tools (`10:`: one line per call, full content when expanded or failed) |
 | `TuiSettingFields` | `<plugin>.<name>` → `/settings` row (label, values, fallback), stored at `settings.plugins.<plugin>.<name>` of the visitor's prefs; read with `pluginSetting`; resolvers get the settings, a change redraws every card (`src/runtime/tui-preferences.ts`) | after the built-in rows, key order | quiet-tools |
 | `TuiEntryRenderers` | entry kind → `(entry, ctx) => Component \| undefined` (replaces the display; `undefined` hides) | — | core `p2.shell` (`src/tui/core-commands.ts:290`) |
-| `TuiMarkdownTransformers` | `<order>:<plugin>` → pi `MarkdownTransformer` | key order | core `00:mermaid` |
+| `TuiMarkdownTransformers` | `<order>:<plugin>` → mars `MarkdownTransformer` | key order | core `00:mermaid` |
 | `TranscriptEntries` | shared with web (4.3) | — | chat-mode |
 
 All in `src/runtime/tui-renderers.ts:16-45`; consumed by the chat surface (`plugins/chat/tui.ts:226-248`).
@@ -359,7 +359,7 @@ actions can be requested; `K` actions fire on the visitor's own key and may ask 
 
 ## 6. Inconsistencies
 
-1. **Tool cards.** TUI: `TuiToolRenderers` + ordered resolvers, pi's contract. Web: a hard-coded switch in core
+1. **Tool cards.** TUI: `TuiToolRenderers` + ordered resolvers, mars's contract. Web: a hard-coded switch in core
    (`src/web/Chat.tsx:303-511`) that knows plugin tools (artifact, ports, send_file, subagent) and imports a plugin
    contract (`src/web/Chat.tsx:12`). A new plugin's tool gets the generic JSON card on the web.
 2. **Entry display.** TUI `TuiEntryRenderers` replaces an entry's display; web has only `TranscriptEntries` (adds a
@@ -398,11 +398,11 @@ actions can be requested; `K` actions fire on the visitor's own key and may ask 
 12. **Reload.** Server/worker reload in place; TUI swaps the worker; web facets take effect through a page reload.
    Registries behave the same, their consumers do not.
 
-## 7. What is lacking (compared with pi 1.0 extensions)
+## 7. What is lacking (compared with mars 1.0 extensions)
 
 Reference: `packages/coding-agent/docs/extensions.md`.
 
-| pi 1.0 | p2 today | Gap |
+| mars 1.0 | p2 today | Gap |
 | --- | --- | --- |
 | `pi.on()` lifecycle: `session_start`/`shutdown`, `before_agent_start`, `context`, `message_end`, `tool_call`/`tool_result`, `turn_end`, `agent_before_settle`, `session_before_compact`, `user_bash`, `input`, `provider_stream_event`, `cache_warming_decision` | Chord resources for start/shutdown; Durable hooks cover `context` (`beforeRequest`), `message_end` (notify-only `afterResponse`), `tool_call`/`tool_result`, `turn_end` (`afterTools`), settle (`onYield`), compaction; `SendRouters` covers `Chat.send` input only | No input hook for peer/subagent/agent inputs; no `user_bash` (shell is hard-coded in chat); no stream events; no whole-prompt override (sections and `wrapSection` instead). No plugin uses hooks yet, so they are untested in p2. |
 | `registerTool` with `exposure`, `namespace`, `annotations`, `prepareLoadout`, `reachesTools` | `callers`, `deferred`, replay policy | No annotations (no approval policy), no namespaces; `tool_search` not installed. |
@@ -446,13 +446,13 @@ Ordered by value; each keeps one name and one shape across surfaces.
 7. **Owner notices as a contract.** A server `Notices` registry/object (tone, message, actions as command ids,
    dismiss) with web lane and TUI status lines as two renderers; `processLogs.notice` becomes one producer.
 8. **Plugin settings.** `settings.json` `plugins.<name>` validated by a schema each plugin registers
-   (`SettingsSchemas`), hot-reloaded like today; moves `codemode` out of core. This also covers pi's flags.
+   (`SettingsSchemas`), hot-reloaded like today; moves `codemode` out of core. This also covers mars's flags.
 9. **Multi-provider registries.** `HarnessConfig` → `ModelProviders` (several plugins add providers, merged into
    `Models`); `HarnessEnvironments` keyed by environment kind; `ConversationLocations` as a registry. Unblocks
    `registerProvider`-like plugins and MCP.
 10. **Hooks that p2 owns.** An input hook for every submission path (Chat, peer, subagent, agent), a shell hook for
    `Chat.shell`, and a worker-side `ToolApprovals` question document with web and TUI renderers, so a tool can ask a
-   person (pi's `ctx.ui.confirm`) and annotations can drive it.
+   person (mars's `ctx.ui.confirm`) and annotations can drive it.
 11. **Core free of plugin names.** Web facets loaded from the plugin graph like the other surfaces (plugin-loading.md);
    `Route` extension data per plugin (`route.plugins[name]`); no `plugins.includes(...)` in hosts; dev-tools through a
    `DevControl` contract instead of `src/hosts/dev-channel.ts`.

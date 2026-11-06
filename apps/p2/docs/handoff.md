@@ -1,11 +1,11 @@
 # p2 handoff
 
-For whoever continues p2, human or agent, starting cold. It assumes you know pi and this repository, but not the
+For whoever continues p2, human or agent, starting cold. It assumes you know mars and this repository, but not the
 history of p2. Everything you need is in the repository; nothing depends on earlier conversations.
 
 ## What p2 is
 
-p2 (`apps/p2`) is Pi Mobile rebuilt on **Chord**, an object runtime (Chord v2: `@earendil-works/chord`,
+p2 (`apps/p2`) is Mars Mobile rebuilt on **Chord**, an object runtime (Chord v2: `@earendil-works/chord`,
 `packages/chord`; p2 runs on Chord v2 only, see `docs/p2-notes.md` **Chord v2**; Chord v1 is deleted).
 Every feature is a plugin (`apps/p2/plugins/*`) with facets per process: `server.ts`, `worker.ts` (one worker per
 session, running Durable), `web.tsx` and `tui.ts`. There is no manifest and no dependency list: p2 discovers plugins
@@ -13,10 +13,10 @@ by listing their facet files and loads them alphabetically. Chord resolves depen
 order does not matter; a missing provider fails loudly, naming the consumer. Compatible backend reloads preserve
 unchanged state and resources; a successful reload publishes rebuilt web and TUI bundles.
 
-p2 replaced Pi Mobile (formerly `apps/mobile`, removed; see git history). Its web UI matches Pi Mobile's (same DOM,
-classes, styles); the data layer is Chord objects instead of Pi Mobile's hand-written protocol. On top of Pi Mobile,
+p2 replaced Mars Mobile (formerly `apps/mobile`, removed; see git history). Its web UI matches Mars Mobile's (same DOM,
+classes, styles); the data layer is Chord objects instead of Mars Mobile's hand-written protocol. On top of Mars Mobile,
 p2 has hot reload with explicit reload/restart controls, logs and owner notices, chat mode with replies and `@pi`
-mentions, owner sign-in links, an isolated TUI with pi's look and keys, and security hardening (CSP, restricted guest
+mentions, owner sign-in links, an isolated TUI with mars's look and keys, and security hardening (CSP, restricted guest
 web assets, WebSocket limits).
 
 p2 lives in `earendil-works/pi` at `apps/p2` and keeps the name p2.
@@ -25,18 +25,18 @@ p2 lives in `earendil-works/pi` at `apps/p2` and keeps the name p2.
 
 | Where | What | Port | Data |
 | --- | --- | --- | --- |
-| Phone (Termux, Node 26) | p2, the daily driver; Pi Mobile's sessions were imported when it replaced Pi Mobile | 8787 | `~/.pi/p2` |
-| slayer (`slayer.marioslab.io`) | p2 in dev mode, public at https://p2.mariozechner.at | 8788 | `~/.pi/p2` (test data) |
+| Phone (Termux, Node 26) | p2, the daily driver; Mars Mobile's sessions were imported when it replaced Mars Mobile | 8787 | `~/.mars/p2` |
+| slayer (`slayer.marioslab.io`) | p2 in dev mode, public at https://p2.mariozechner.at | 8788 | `~/.mars/p2` (test data) |
 
-Done: everything Pi Mobile did (checked by a four-part audit; what differs on purpose is under Decisions in
+Done: everything Mars Mobile did (checked by a four-part audit; what differs on purpose is under Decisions in
 `docs/p2-notes.md`), the switch of the phone, the TUI port phases P0–P7 and P9–P11, and Chord in `packages/chord`
-replacing the old facet/service runtime and the `pi-client`, `pi-protocol` and `pi-server` packages (pi
+replacing the old facet/service runtime and the `pi-client`, `pi-protocol` and `pi-server` packages (mars
 `6db4070f1`). Open items are under [Open work](#open-work).
 
 ## The phone
 
-- **Checkout:** `~/pi-private`, branch `private`. Old data: `~/.pi/mobile` (keep it: imported history refers to
-  attachments there), `~/.pi/p2.parallel` and `~/.pi/p2.trial-oct10` (leftovers, deletable).
+- **Checkout:** `~/pi-private`, branch `private`. Old data: `~/.mars/mobile` (keep it: imported history refers to
+  attachments there), `~/.mars/p2.parallel` and `~/.mars/p2.trial-oct10` (leftovers, deletable).
 - **p2** runs in tmux session `p2` from `~/pi-private/apps/p2` (as planned for the switch; confirm with `tmux ls`
   and `ps`):
   ```sh
@@ -109,7 +109,7 @@ verifying an agent's files on their own before committing. Node 24: `~/node-v24.
 - **Durable** (`packages/durable`) runs the agent: conversations, inputs as custom entries (`p2.input`,
   `chat.mention`), display-only writes placed immediately, code mode (QuickJS sandbox; scripts call tools as
   `tools.<name>`, one-shot agents via `tools.agent`), compaction with visible failures, deferred tools and
-  `tool_search` (MCP tools are for code mode scripts, as in pi; `tool_search` loads them only while code mode is off).
+  `tool_search` (MCP tools are for code mode scripts, as in mars; `tool_search` loads them only while code mode is off).
 
 ## The TUI
 
@@ -117,7 +117,7 @@ verifying an agent's files on their own before committing. Node 24: `~/node-v24.
 and plugin facets) comes from the server as one bundle and runs in a worker that drops every Node permission first.
 Output passes a strict escape-sequence allowlist; privileged actions (copy, open URL, download, external editor,
 attach, saving preferences, sign-out) need launcher grants, mostly with a launcher-drawn consent screen. Preferences
-(keybindings, theme, display settings) are the visitor's own (`~/.pi/agent`, `~/.pi/p2-tui/prefs.json`). Threat
+(keybindings, theme, display settings) are the visitor's own (`~/.mars/agent`, `~/.mars/p2-tui/prefs.json`). Threat
 model: `DEV.md` and `README.md` (TUI isolation). Design and as-built notes: `docs/p2-tui-port.md`.
 
 ## Rules
@@ -156,7 +156,7 @@ From `AGENTS.md` and this project's history:
    serves `bytes=-` whole, workspace answers 416; body readers: sharing answers 400 past the limit, devices 413);
    decide one behavior each.
 4. **MCP:** `plugins/mcp` (WP6-8 of `docs/mcp-durable.md`: owner `mcp.json`, host stdio and HTTP, code mode
-   tools (`tool_search` without code mode), servers on environments, project `.pi/mcp.json`, OAuth sign-in); code mode
+   tools (`tool_search` without code mode), servers on environments, project `.mars/mcp.json`, OAuth sign-in); code mode
    namespaces (WP9) are open, and whether Radius sends its cookie on a sign-in's redirect back is unverified.
 5. **npm:** deprecate `@earendil-works/pi-client`, `pi-protocol` and `pi-server` (1.1.0), which no longer exist.
 6. `docs/p2-notes.md` TODO: the TypeScript 5.9.3 pin (Termux), an isolating plugin loader, sandboxing third-party

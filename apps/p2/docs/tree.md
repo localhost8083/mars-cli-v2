@@ -1,13 +1,13 @@
 # `/tree`: branching the main conversation
 
-pi's `/tree` in p2 (owner decisions from the design discussion). Code: `plugins/tree/` (worker, web sheet),
+mars's `/tree` in p2 (owner decisions from the design discussion). Code: `plugins/tree/` (worker, web sheet),
 `src/runtime/main-conversation.ts`, `src/tui/components/tree-selector.ts`, `/tree` in `plugins/chat/tui.ts`, the sidebar's
 branch rows (`src/web/Drawer.tsx`, `plugins/sessions/web.tsx`, `BranchSheet.tsx`). Tests:
 `tree.test.ts`, `tui-tree.test.ts`, `ui-tree.test.ts`.
 
 ## Goal
 
-pi's `/tree` (`packages/coding-agent/src/core/agent-session.ts` `navigateTree`, `components/tree-selector.ts`) moves
+mars's `/tree` (`packages/coding-agent/src/core/agent-session.ts` `navigateTree`, `components/tree-selector.ts`) moves
 the session's position to an earlier entry; the next message starts a new branch there, and old branches stay
 reachable. Example:
 
@@ -69,7 +69,7 @@ A branch forked before a subagent was spawned still lists that subagent (accepte
 
 ### Navigate
 
-`SessionTree.navigate({ entry })` (owner), pi's rules:
+`SessionTree.navigate({ entry })` (owner), mars's rules:
 
 | Picked | Result |
 | --- | --- |
@@ -95,7 +95,7 @@ What the sidebar and the TUI selector call a branch: `label` in `p2.main`, store
   it follows a session rename. Once renamed, its stored label wins.
 - **Renaming:** `SessionTree.rename({ conversation, label })` (owner): one line, 1 to 200 characters after trimming;
   null or empty resets conversation 1 to the session title (other branches need a label). Web: the pencil beside a
-  branch row (on hover; always on touch screens) opens a sheet. TUI: pi's label key (`app.tree.editLabel`, Shift+L) in
+  branch row (on hover; always on touch screens) opens a sheet. TUI: mars's label key (`app.tree.editLabel`, Shift+L) in
   `/tree` renames the branch holding the selected message.
 - **Version 1** (`branches: number[]`) migrates to `label: null` (Durable `migrate`). At start the worker labels the
   null branches other than conversation 1 once, in one commit: the fork point's message (`parent.at`; for an Edit that
@@ -106,15 +106,15 @@ What the sidebar and the TUI selector call a branch: `label` in `p2.main`, store
 `SessionTree.tree()` (owner) returns the nodes (entry, parent node, role, preview), the main conversation and its last
 node:
 
-- Nodes are user messages (not head markers) and assistant answers with text, like pi's default filter.
+- Nodes are user messages (not head markers) and assistant answers with text, like mars's default filter.
 - A branch's own entries are its fork-aware entries with IDs above `parent.at` (entry IDs are Session-global and the
   fork is created after `at`); its first node hangs below the last node at or before `parent.at`.
 - The whole history is scanned per call: fine for now; long sessions may need paging.
 
 ### Where
 
-- TUI: `/tree` (`app.session.tree`) and double Escape (`doubleEscapeAction`, default "tree" as in pi), a selector
-  adapted from pi's `tree-selector.ts` (layout, active path, paging, label input; no filters or folding). A branch's
+- TUI: `/tree` (`app.session.tree`) and double Escape (`doubleEscapeAction`, default "tree" as in mars), a selector
+  adapted from mars's `tree-selector.ts` (layout, active path, paging, label input; no filters or folding). A branch's
   label shows before its first own message (`TreeNode.conversation` names the branch storing a node).
 - Web: "Edit" beside the owner's view of a user message (on hover; always shown on touch screens) and "Branch from
   here" under an answer, in the main conversation. Under the session in the sidebar, from two branches on, one row per
@@ -127,8 +127,8 @@ node:
 
 ## Later
 
-- Branch summary of the branch being left (pi's `branchSummary`): a write in the new branch after the fork.
-- Filters and folding in the selectors; labels on single entries (pi's entry labels).
+- Branch summary of the branch being left (mars's `branchSummary`): a write in the new branch after the fork.
+- Filters and folding in the selectors; labels on single entries (mars's entry labels).
 - Session cost: sum `pi.usage` over all top-level conversations.
 - History tools in a branch search only the branch's own entries (inherited ones are indexed with conversation 1).
 - Deleting or archiving branches.

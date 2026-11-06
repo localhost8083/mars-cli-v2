@@ -74,7 +74,7 @@ Types served on session workers with an empty input get a `session` input (versi
 `plugins/sessions/server.ts:291,300`), `PluginRemoval` (`src/hosts/plugins.ts:107`, callers
 `src/hosts/server.ts:301,333`).
 
-**Touches.** Chord (via pi first): `host` helpers with pattern and resolver in `remote(...)` contracts, address
+**Touches.** Chord (via mars first): `host` helpers with pattern and resolver in `remote(...)` contracts, address
 resolution without `at`, the check at `serve` and at acquisition, placement in the fingerprint; `at` stays only for the
 transition. p2: `host` on every remote contract, the three input changes above, removing the 85 literal options and the
 plumbed `at` (`useObject`, `holdLingering`, `linger.ts`, TUI `watch`, `file-completion.tsx`), tests.
@@ -94,7 +94,7 @@ p2 cast by hand: five check `(principal as { host?: unknown }).host !== "server"
 `via: "relay"` covers both Radius and remote cookie devices, `device` is optional, and the owner has no name (`authorOf`
 returns "Owner", the web prints the literal "Owner": `src/web/Chat.tsx:742,772`).
 
-**Change, Chord (via pi first).** The principal type is a type parameter of the host (`createHost<P>(...)`); factories,
+**Change, Chord (via mars first).** The principal type is a type parameter of the host (`createHost<P>(...)`); factories,
 `ctx`, `principalKey` and `invalidatePrincipal` receive `P` and TypeScript narrows on `kind`. Chord invents no
 principals: the app supplies the principal of the host's own code (`createHost({ self: … })`) and the one the parent's
 own requests carry (`host.connect(link, { principal: … })`); relayed requests keep the caller's principal;
@@ -311,7 +311,7 @@ await store.reload(ctx);                                                        
 
 **Batch.** One pass after the in-place relocation lands (it touches the same plugin files), together with entries 1
 (terminology, `variant` with a link protocol version), 2 (object types declare their host), 3 (typed principals),
-5 (`lifetime`), 8 (an awaited reference has its state) and 9 (state `init`). Chord first, via pi (Chord source, tests, docs `spec.md`/`guide.md`/`tutorial.md`; CI), then p2. Not
+5 (`lifetime`), 8 (an awaited reference has its state) and 9 (state `init`). Chord first, via mars (Chord source, tests, docs `spec.md`/`guide.md`/`tutorial.md`; CI), then p2. Not
 in the batch: 4 (`files` tool), 6 (references re-acquire), the resource and listener redesign.
 
 ## 8. An awaited reference has its state, local or remote (batch)

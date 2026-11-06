@@ -2100,7 +2100,7 @@ rule underneath: a plugin carries what it was written against, never the running
   (`../notes/contract.ts`, the same commit holds both sides), by package name across repositories (`@bob/notes`,
   `@bob/notes/web`, pinned by an npm version or a git ref `github:bob/notes#<commit>`; a plugin inside a
   multi-plugin repository through a dependency on the whole repository, by path into it or its `exports`). A package
-  lists the plugins it provides in `chord.plugins` (as pi's manifest). One facet imports one API version only.
+  lists the plugins it provides in `chord.plugins` (as mars's manifest). One facet imports one API version only.
 - **Versions:** the app lists the API versions it provides; an unlisted one is a build error naming the available ones.
   The process runs one Chord: an older API version is a layer over today's, re-exporting Chord's compatibility module
   for its previous API while Chord keeps one; contracts bind through `accepts` whatever Chord runs.
@@ -2556,7 +2556,7 @@ loop. Chord has no stream type (it would need its own rules for drops, cancellat
 - Durable keeps importing today's Chord's `context`, `delta`, `json`, `output` and `sqlite`; `next/` imports the same
   modules, so `Context`, `Draft` and `JsonValue` are one type. Durable's conversation view, task graph and documents
   are `Watchable`s through Durable's watches (Durable's `WatchHandle` now lives in Chord); Durable adopts and dispatches
-  them synchronously inside the storage's commit (S1, W1; with `StoreStorage` that is the store's commit step), so a derive over a Durable view travels with it. This needs Durable to publish a commit when it adopts it (owner, 2026-10-26; a pi change, upstream first; explainer `durable-observers/`): inside `adopt`, its trackers, telemetry events and internal observers (view mounts, task graph, scheduler, submissions) run, and the host `observeCommits` observers are dispatched in one microtask queued before the observers, so they run before every wait the commit resolves and every abort it queues, but after the storage's synchronous step, never inside Chord's batch; host listeners and watch listeners have no order between them (owner, 2026-10-26). Durable's public primitive for adapters is a synchronous observer, `observeConversation`, `observeTaskGraph`, `observeDoc` (its `advance(call, ctx)` gets a `WatchCall` and runs inside `adopt`: record only, no awaits, no Session calls, no throws); `watchXXX` is built on it for app code. Chord's `self.follow(attach)` (slice 6b D9) is a source over it. Otherwise a derive over two Durable views computes between their frames of one commit. With `StoreStorage`, Durable's `adopt` runs inside the host's batch; the store knows nothing of Durable (no special cases) and needs only its step and flush to stay synchronous. Durable's
+  them synchronously inside the storage's commit (S1, W1; with `StoreStorage` that is the store's commit step), so a derive over a Durable view travels with it. This needs Durable to publish a commit when it adopts it (owner, 2026-10-26; a mars change, upstream first; explainer `durable-observers/`): inside `adopt`, its trackers, telemetry events and internal observers (view mounts, task graph, scheduler, submissions) run, and the host `observeCommits` observers are dispatched in one microtask queued before the observers, so they run before every wait the commit resolves and every abort it queues, but after the storage's synchronous step, never inside Chord's batch; host listeners and watch listeners have no order between them (owner, 2026-10-26). Durable's public primitive for adapters is a synchronous observer, `observeConversation`, `observeTaskGraph`, `observeDoc` (its `advance(call, ctx)` gets a `WatchCall` and runs inside `adopt`: record only, no awaits, no Session calls, no throws); `watchXXX` is built on it for app code. Chord's `self.follow(attach)` (slice 6b D9) is a source over it. Otherwise a derive over two Durable views computes between their frames of one commit. With `StoreStorage`, Durable's `adopt` runs inside the host's batch; the store knows nothing of Durable (no special cases) and needs only its step and flush to stay synchronous. Durable's
   state getters (`documentState`, `viewState`, `taskGraph()`) and the `replicatedState` family are removed (W14). Only
   plain data crosses between Durable and v2 objects.
 - **The harness is an object in the core facet** (base code): a `Harness` `local` object with empty params, so host lifetime (it runs for the worker's whole life,
@@ -2575,7 +2575,7 @@ loop. Chord has no stream type (it would need its own rules for drops, cancellat
   }, context), (h, _reason, context) => h.close(context));
   ```
 
-  Durable's `models` and `settings` accept functions (pi `7ec1f648e`). Durable opens with scheduling paused; base code
+  Durable's `models` and `settings` accept functions (mars `7ec1f648e`). Durable opens with scheduling paused; base code
   calls `harness.resume()` after `await host.load(...)`; the worker connects to its parent first (W6), so host-lifetime
   stores can reference server types during the barrier; requests arriving during `load` park like any call to a
   loading object (refines R17). A missing tool gives its call an error result the model sees; a missing model makes the generation
@@ -2730,7 +2730,7 @@ const accepted = checkAccepts(NotesV2, {
 Chord v2 is built in vertical slices; the plan, the feature map (every feature of this document assigned to the slice
 that builds it) and the carry-over of deferred obligations are in `slices.md`. Slice specs (`slice-N.md`) stay as the
 history of how each slice was specified; this document states the current rules. The first layered build (kernel steps
-1-6) was deleted on 2026-10-22 and survives only in git history. Done in pi: `pi-telemetry` (propagation, links,
+1-6) was deleted on 2026-10-22 and survives only in git history. Done in mars: `pi-telemetry` (propagation, links,
 metrics, the store interface, the renderer), `chord/context` (`Context.telemetry`), pi-ai and Durable telemetry,
 `chord/telemetry-sqlite` (section 29), Chord's shared `Watch`/`NativeWatch`/`PendingOps`, Delta's `appendText`.
 
@@ -2763,7 +2763,7 @@ Chord reports traces, events and metrics through `@earendil-works/pi-telemetry`;
 - **Types:** the adapter is a `TelemetryContext` (`startSpan` plus optional readonly `metrics` and `propagation`
   capabilities); only hosts hold it, to start roots. `Context.telemetry` is always a `TelemetrySpan` (the NOOP span by
   default); every span carries its adapter's `metrics` and `propagation`, so code with a context can record metrics
-  and inject carriers. `withTelemetry(span, context)`, `traceIn(options, fn, context)` (context last; pi change with S1); `value()` and keys stay.
+  and inject carriers. `withTelemetry(span, context)`, `traceIn(options, fn, context)` (context last; mars change with S1); `value()` and keys stay.
   `Ctx` extends `Context`, so `ctx.telemetry` is the current span; app values such as the principal stay out of
   Durable's context. `ctx.trace(name, attributes, fn)` creates a child span and gives `fn` a child `ctx`.
 - **Adapters trust typed inputs:** no validation of malformed caller values and no try/catch around recording; only

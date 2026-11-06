@@ -22,16 +22,16 @@ how p2 uses it: **Chord v2** below.
 
 ```sh
 cd apps/p2
-P2_FAKE=1 npm start          # http://127.0.0.1:8788, data in ~/.pi/p2
+P2_FAKE=1 npm start          # http://127.0.0.1:8788, data in ~/.mars/p2
 ```
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `P2_DATA_DIR` | `~/.pi/p2` | data directory: `catalog.sqlite`, `sessions/<id>.sqlite`, `settings.json`, `models.json`, `envs.json`, `mcp.json`, `mcp-auth.json`, `auth.json`, `radius.json`, `forwards.json` |
+| `P2_DATA_DIR` | `~/.mars/p2` | data directory: `catalog.sqlite`, `sessions/<id>.sqlite`, `settings.json`, `models.json`, `envs.json`, `mcp.json`, `mcp-auth.json`, `auth.json`, `radius.json`, `forwards.json` |
 | `PORT` | `8788` | listen port (loopback only), so p2 never collides with pi-mobile on 8787 |
 | `P2_FAKE` | unset | `1`: the faux provider (`faux/faux-1`, echoes the prompt; `slow …` streams long; `rename-session <title>` calls the tool; `subagent`, `subagent-bad`, `subagent-answer`, `subagent-configure`, `subagent-send`, `subagent-archive`, `subagent-status` exercise subagents, `subagent <json>` calls the tool with those arguments, as do `team <json>`, `history_search|read|handoff <json>`, `location_envs|dirs|move <json>`, `tool_search <json>`, `terminal <json>` and `mcp__<server>__<tool> <json>`; `codemode` runs a script calling bash and read, `codemode-restart` one whose slow middle call a restart interrupts, `codemode <script>` runs that script; `artifact <json>` calls the artifact tool with those arguments; `json <text>` answers exactly `<text>`; a one-shot agent whose task is not `json …`/`slow…` answers a small value matching its schema) |
 | `P2_IDLE_MS` | `300000` | idle time before a session worker stops |
-| `P2_PROVIDER`, `P2_MODEL` | unset | default model for new sessions after settings.json's `defaultModel` (both or neither; Pi Mobile's `PI_MOBILE_PROVIDER`/`PI_MOBILE_MODEL` work too) |
+| `P2_PROVIDER`, `P2_MODEL` | unset | default model for new sessions after settings.json's `defaultModel` (both or neither; Mars Mobile's `PI_MOBILE_PROVIDER`/`PI_MOBILE_MODEL` work too) |
 | `P2_RADIUS` | unset | `0`: disable the outbound Radius brain connection even when signed in |
 | `PI_RADIUS_GATEWAY` | production Radius | gateway selected by `npm run radius:login` |
 | `P2_TERMINAL_DAEMON` | unset | optional local pi-env daemon binary; otherwise use packages/env release/development builds |
@@ -94,7 +94,7 @@ cd /home/badlogic/pi-private/apps/p2
 export PATH=/home/badlogic/node-v24.4.1-linux-x64/bin:$PATH
 # The proxy sets X-P2-Proxy-Secret: 1 on every request (never an owner grant).
 P2_ALLOWED_HOSTS=p2.mariozechner.at P2_PUBLIC_URL=https://p2.mariozechner.at \
-  P2_DATA_DIR="$HOME/.pi/p2" PORT=8788 npm run dev
+  P2_DATA_DIR="$HOME/.mars/p2" PORT=8788 npm run dev
 ```
 
 Do not launch this beside another server using the same data directory or port. Moving a standalone server into
@@ -132,7 +132,7 @@ Use a temporary `P2_DATA_DIR` and a different `PORT` for experiments.
 
 ### Agents: apply edits explicitly
 
-Run from `apps/p2`, with `P2_DATA_DIR` matching the running server (default `~/.pi/p2`):
+Run from `apps/p2`, with `P2_DATA_DIR` matching the running server (default `~/.mars/p2`):
 
 ```sh
 npm run reload                       # all dirty plugins, including additions/removals
@@ -176,18 +176,18 @@ the prompt) asks for a display name and redeems it with `POST /join`; the guest 
 owner cookie and reused after a `HEAD /__p2_tui` check. If the server stops admitting it (link reset, guest removed,
 session archived) the TUI exits with a notice and forgets it. Loopback stays the device owner unless `--join` is given.
 Basic-auth options/environment/passwords are removed. Prefer the prompt to command-line credentials, which can
-appear in shell history/process listings. Only the cookie is saved per origin in `~/.pi/p2-tui/config.json`
+appear in shell history/process listings. Only the cookie is saved per origin in `~/.mars/p2-tui/config.json`
 (0600, directory 0700); the consumed invitation is never saved. Local configuration stores only cookies;
 `P2_TUI_CONFIG_DIR` isolates tests. No provider credentials are read by the launcher. Keybindings, theme and display
-settings are the visitor's (p2-tui-port.md 4.3): the launcher reads pi's `keybindings.json`, `settings.json` and
-`themes/*.json` (`PI_CODING_AGENT_DIR` or `~/.pi/agent`, never written) and `prefs.json` beside `config.json`, keeps a
+settings are the visitor's (p2-tui-port.md 4.3): the launcher reads mars's `keybindings.json`, `settings.json` and
+`themes/*.json` (`PI_CODING_AGENT_DIR` or `~/.mars/agent`, never written) and `prefs.json` beside `config.json`, keeps a
 validated whitelist and posts it as data; it watches them, so custom themes and bindings hot-reload. `--theme` and
 `--no-themes` work as in pi. The launcher also queries the terminal's colors (OSC 10/11/4, mode 2031) and posts
 them with its color depth and platform. `<P2_DATA_DIR>/tui.json` (`TuiPreferences`) only holds server defaults, e.g.
 `{"keybindings":{"app.model.select":"ctrl+k"},"theme":"light","settings":{"hideThinkingBlock":true}}`; privileged
-(launcher-owned) bindings are dropped. `hideThinkingBlock` (unset = hidden, unlike pi) sets the thinking view whenever
+(launcher-owned) bindings are dropped. `hideThinkingBlock` (unset = hidden, unlike mars) sets the thinking view whenever
 its effective value changes; `app.thinking.toggle` overrides it until then, and a reload snapshot keeps the toggle. Themes are per-runtime instances (`src/tui/theme/`); keys and commands go
-through the `TuiCommands` registry (pi ids, contexts, `/hotkeys`, F1 palette, `/` completion).
+through the `TuiCommands` registry (mars ids, contexts, `/hotkeys`, F1 palette, `/` completion).
 
 The unrestricted launcher (`src/hosts/tui.ts`, `tui-client.ts`) owns terminal input/resize, the same `/chord`
 WebSocket as the browser and its cookie. It downloads only a same-origin `/__p2_tui` manifest and bounded,
@@ -226,14 +226,14 @@ terminal. A crash (an uncaught exception or a throwing message handler) is print
 the terminal: the stack (frames name `p2-tui-bundle.mjs`), controls removed, at most 8 KiB (the bundle keeps function
 and class names for this); a heap overrun says so instead. Rendering is copied from coding-agent's interactive mode and DurableTui (p2-tui-port.md P0c/P2;
 p2 imports neither coding-agent nor mobile): a fullscreen layout (transcript `ScrollView` over a dock of status lines,
-pending area, pi's editor with the working indicator in its border, and pi's footer), incremental transcript
-components keyed by the shared display items (`src/tui/components/`), pi's tool cards and renderers for bash, read,
+pending area, mars's editor with the working indicator in its border, and mars's footer), incremental transcript
+components keyed by the shared display items (`src/tui/components/`), mars's tool cards and renderers for bash, read,
 write, edit (the result's diff), grep/find/ls and code mode (`src/tui/tools/`), and plugin contributions through
 `TuiToolRenderers`, `TuiToolRendererResolvers`, `TuiEntryRenderers` and `TuiMarkdownTransformers`
 (`src/runtime/tui-renderers.ts`). Drafts, pending send IDs and reading positions are kept per viewed
 (session, conversation); the reading position stays put while output grows or older history is prepended.
 
-pi's defaults (rebindable in pi's `keybindings.json` or p2 prefs; `/hotkeys` lists all with conflicts):
+mars's defaults (rebindable in mars's `keybindings.json` or p2 prefs; `/hotkeys` lists all with conflicts):
 
 | Key | Action |
 | --- | --- |
@@ -280,7 +280,7 @@ heap/ArrayBuffer allocations), plus deterministic adversarial/fuzz output filter
 web-equivalent admission, a real server/bundled-worker/pi-tui session with fake replies, server defaults under local preferences,
 queues/stop, resized rendering, replacement/state preservation, failed build rollback, reconnect, denied capability
 requests/cookie secrecy and concurrent shutdown during worker preparation. `tui-commands.test.ts` covers the
-command registry (when grammar, privileged/transcript/plugin/slash collisions, pi `keybindings.json` overrides, registry
+command registry (when grammar, privileged/transcript/plugin/slash collisions, mars `keybindings.json` overrides, registry
 reload, overlay precedence, palette, `/hotkeys`); `tui-theme.test.ts` per-runtime themes, terminal colors, the launcher's
 preference loader and hot reload, and the data-only `preferences`/`capabilities`/`terminalColors` messages. Run these
 with Node 26.11.1; Node 24 remains valid for the server but cannot execute the sandbox tests.
@@ -386,7 +386,7 @@ npm start
   exists; absent config is checked again every 30 seconds. The private file contains gateway, stable brain ID,
   OAuth credential and the last brain origin. Credentials refresh before connecting. `P2_RADIUS=0` disables it.
   Relay v4 HTTP uses credit and uplink backpressure; WebSocket channels work too. End-to-end `stream` channels
-  remain unsupported. Only the credential's authenticated owner can reach Pi. Relayed loopback requests carry
+  remain unsupported. Only the credential's authenticated owner can reach Mars. Relayed loopback requests carry
   a per-resource secret checked by the plugin's `RequestResolvers` contribution; the host stamps an owner
   principal with `access: "relay"`, a remote origin, and normal same-origin checks. They may sign in to model providers,
   but cannot mint local tokens or receive a local owner cookie. Credentials never reach web state.
@@ -394,13 +394,13 @@ npm start
   forwards and confirms public opt-in. Every forward is private by default and has an isolated
   `https://fwd--<brain label>--<random id>.rdtun.com/` address. Public forwards additionally have
   `https://pub--<brain label>--<id>.rdtun.com/`; anonymous channels can reach only currently-public forwards,
-  never Pi. Removed IDs stop working. Radius forwards HTTP and WebSockets to `localhost:<port>` with local
-  Host/Origin, public `X-Forwarded-*` and rewritten localhost redirects, without the relay secret. Pi's own
-  port cannot be forwarded. Links appear after the owner opens Pi through Radius and survive restart;
+  never Mars. Removed IDs stop working. Radius forwards HTTP and WebSockets to `localhost:<port>` with local
+  Host/Origin, public `X-Forwarded-*` and rewritten localhost redirects, without the relay secret. Mars's own
+  port cannot be forwarded. Links appear after the owner opens Mars through Radius and survive restart;
   on-device Open uses localhost. Radius sees forwarded traffic; this is not a sandbox.
 - The worker's root-only `ports` tool has `list/open/close`, fixes owner/peer attribution at its calling assistant
   entry, and denies guest/unattributed turns. It lists every forward and explicitly names all public endpoints,
-  asks the model to obtain confirmation before publishing. As in Pi Mobile (67cdb4ca4) it may change or close any
+  asks the model to obtain confirmation before publishing. As in Mars Mobile (67cdb4ca4) it may change or close any
   forward: open on an already forwarded port keeps its address and opener and takes the new name and visibility,
   whoever opened it; close stops any forward. Archiving awaits the `SessionArchived` cleanup contributions; startup
   removes any archived-session forwards left by an interrupted archive. A remote-environment session cannot open
@@ -413,7 +413,7 @@ npm start
 
 ## Browser navigation
 
-`src/web/navigation.ts` is an independent, minimized copy of Pi Mobile's stack. `src/runtime/web.tsx` exposes
+`src/web/navigation.ts` is an independent, minimized copy of Mars Mobile's stack. `src/runtime/web.tsx` exposes
 `useNavigation()` and `useRoute()` to plugins. Routes contain a session/conversation, named sheet/viewer layers
 (with small string locators), the workspace location, and an optional bottom terminal. Only the top modal shows.
 The stack and per-area scroll positions persist in this tab's sessionStorage; URLs identify conversations
@@ -499,9 +499,9 @@ translated phone drawer and intercept chat taps.
 
 ## Decisions
 
-- **Where p2 differs from Pi Mobile on purpose** (from the parity audit before Pi Mobile was retired):
+- **Where p2 differs from Mars Mobile on purpose** (from the parity audit before Mars Mobile was retired):
   - **Section and tool order:** p2 offers sections and tools in plugin load order, which is alphabetical
-    (`src/hosts/plugins.ts`). Pi Mobile's order is its hand-written install sequence in `worker/main.ts` (coding
+    (`src/hosts/plugins.ts`). Mars Mobile's order is its hand-written install sequence in `worker/main.ts` (coding
     tools, artifact, send_file, subagent, conversations, ports, session title; then preamble, cwd, the app guide,
     AGENTS.md, skills; then code mode and PowerShell). Reproducing it would need a hand-maintained rank of every
     plugin's extensions, which is the manifest p2 avoids (no plugin declares an order). The sections' relative order
@@ -515,16 +515,16 @@ translated phone drawer and intercept chat taps.
     subagent messages (search hits open their conversation), and their activity counts as the session's.
   - Items the reports mark intentional (owner links, sharing revisions, no heartbeat lease, sticky failed starts, the
     "Session unavailable" screen, the Devices sheet, `/s/<id>/c/<n>` URLs, the extra p2 fake triggers) stay as decided.
-- **Beyond Pi Mobile:**
+- **Beyond Mars Mobile:**
   - **Composer file completion** (p2-tui-port.md P7c, `src/web/file-completion.tsx`, `src/runtime/completion.ts`): in a
     session's composer, `@` after a token boundary opens a list of the session directory's files and folders (the
-    `file-index` plugin, ranked like pi's `@`), and Tab on a path-like token completes it from that directory. While the
+    `file-index` plugin, ranked like mars's `@`), and Tab on a path-like token completes it from that directory. While the
     list is open, Enter/Tab apply, the arrows move and Escape closes it, ahead of send and stop; closed, the composer
     behaves as before. IME composition never opens it. `@pi` (chat mode's mention) is never completed as a file; in chat
-    mode "@pi — mention Pi" comes first. `~`, absolute and `..` paths complete nothing (the hint says so). The
-    new-session composer has none (the session does not exist yet). Pi Mobile has no composer completion; this is the
+    mode "@pi — mention Mars" comes first. `~`, absolute and `..` paths complete nothing (the hint says so). The
+    new-session composer has none (the session does not exist yet). Mars Mobile has no composer completion; this is the
     shared behavior of p2's TUI and web. Test: `ui-file-completion.test.ts`.
-  - **`enabledModels`** in settings.json (p2-tui-port.md P3): the TUI's scoped model cycling; Pi Mobile has no such key.
+  - **`enabledModels`** in settings.json (p2-tui-port.md P3): the TUI's scoped model cycling; Mars Mobile has no such key.
   - **Chat version 3** (P3): `compact`, `abortCompaction`, `reset` (owner) and `dequeueOwn`, and the guest-safe `model`
     state, used by the TUI; the web UI is unchanged.
 
@@ -532,7 +532,7 @@ translated phone drawer and intercept chat taps.
   `p2.subagent-anchor`, `p2.subagent-reporter`; entries `p2.input`, `p2.peer-message`; extensions `p2-artifacts`, `p2-downloads` (and the
   unprefixed `subagent-tools`, which subagent conversations store in their agent state). No `mobile.*` name is read.
   p2 sessions created before the rename (with `mobile.*` documents) are not migrated: their subagent registry,
-  one-shot agents and artifact index look empty (owner decision). Pi Mobile sessions were converted to these names by a one-time
+  one-shot agents and artifact index look empty (owner decision). Mars Mobile sessions were converted to these names by a one-time
   importer when the phone switched to p2 (removed afterwards; see git history). Old `pi.user` inputs that carry
   their author only in a `<mobile-speaker>` text block are not read back (no reader for them is left): they show
   as plain text without an author and attribute no tool call.
@@ -681,7 +681,7 @@ translated phone drawer and intercept chat taps.
   model message of both starts with a `<sender kind="owner|guest|session" …/>` block (`src/runtime/sender.ts`,
   values escaped), which the preamble explains and nothing reads back: readers and `originOf` use the entry data.
   Stop/dequeue restore text only to its author; removing a queued input (×,
-  no restore) discards it, as in Pi Mobile.
+  no restore) discards it, as in Mars Mobile.
 - **Windowed conversation view** (`plugins/chat/worker.ts`, `src/web/history.ts`, `src/runtime/conversation-stats.ts`):
   `Chat.view` is Durable's view as is: a window over the transcript (the fork-aware history in entry ID order, head
   markers in place), the newest 50 entries, then appends, back to 50 past 100, `before` the entry just before it. The
@@ -744,7 +744,7 @@ translated phone drawer and intercept chat taps.
 - **Service worker** (`public/sw.js`, served at `/sw.js` with `no-cache`): the app starts without the network once it
   was opened. App pages come from the network first and fall back to the last app page kept (on failure, or after 3
   seconds); the web bundle's content-named files come from the cache first (the newest two bundle versions are kept);
-  everything else goes to the network untouched. Pi Mobile had none because it would have kept stale code across Vite
+  everything else goes to the network untouched. Mars Mobile had none because it would have kept stale code across Vite
   HMR and restarts; p2 serves no source modules (dev mode included), so every kept file is content-named and the page
   never wins over the network. Signing out deletes its caches.
 - **Sending never waits** (`plugins/chat/outbox.ts`): Send clears the composer and the message shows at once as it
@@ -813,7 +813,7 @@ translated phone drawer and intercept chat taps.
   paste with plain text stays a text paste (Office apps add a picture of the copied text, Chrome on macOS a Finder
   file's icon); a paste with only images attaches them.
 - **File index** (`plugins/file-index`): `FileIndex({ session, conversation })` (participants, as `Workspace`) answers
-  `@` completion (`complete`, ranked like pi's `@`) and Tab completion (`list`, one directory) for the TUI and the web
+  `@` completion (`complete`, ranked like mars's `@`) and Tab completion (`list`, one directory) for the TUI and the web
   composer. A worker-local cache per conversation (`FileIndexCache`) builds from `WorkspaceBackend`'s `files` query
   (git ls-files or the bounded walk, private paths excluded, `truncated` surfaced), derives directories from paths,
   and rebuilds lazily when `changes` advanced (at most once a second). Cwd-relative only (`~`, absolute and `..`
@@ -843,17 +843,17 @@ translated phone drawer and intercept chat taps.
 - **Remote environments** (`plugins/envs`, [guide](remote-envs.md)): owner-only `Envs` lists environments with their
   last test, saves/deletes/tests configs, accepts/forgets host keys and browses local/remote directories. Key generation,
   public-key retrieval and private-key upload are available to every owner (including associated and Radius owners),
-  as in Pi Mobile, never guests (owner decision; formerly device-only). A proxy alone grants no ownership. Uploads
+  as in Mars Mobile, never guests (owner decision; formerly device-only). A proxy alone grants no ownership. Uploads
   pass through the tunnel/relay, which must be trusted with the private key. `envs.json` has independent server/worker observers; invalid edits
   retain the last valid state. Sessions persist `env` beside raw cwd and display `gpu:/path`; subagents with their own
   location carry its `env` (see **Agent locations**). Deletion checks all sessions and subagent locations, archived
   ones included. Valid edits stop idle workers using the environment; busy ones keep their captured environment until
   idle. `HarnessEnvironments` supplies a lazy machine per environment (`open(env)`: environments at its directories
   over one connection); missing/unreachable envs never use local tools. Attachments copy to remote
-  `~/.pi/p2/uploads/<session>/` of the machine where the receiving conversation works, before admission; inline
+  `~/.mars/p2/uploads/<session>/` of the machine where the receiving conversation works, before admission; inline
   images retain the local upload copy. Project instructions, skills, workspace and downloads use the conversation's
   environment. The local global AGENTS.md stays
-  local; remote skills use `~/.pi/p2/skills/`. New-session Browse directories and environment editors use route-owned
+  local; remote skills use `~/.mars/p2/skills/`. New-session Browse directories and environment editors use route-owned
   locators (Back/reload); read/write remote shares require explicit confirmation at the API and in the browser.
   `envs.test.ts` uses a fake provider and disposable loopback sshd with private fixture keys/HOME (skips without sshd
   or a daemon). It covers host trust, key storage, directories, no local fallback, tools, workspace, uploads, prompt
@@ -883,7 +883,7 @@ translated phone drawer and intercept chat taps.
   agent's calls to an outdated host fail with that advice (`OUTDATED_HOST`); archiving closes its terminals with the
   viewer protocol every host speaks (list, then attach and force-close each).
   Each terminal has a number in its session (`index`: the lowest free one from 1, kept while it lives), an optional
-  name and an `agent` mark; tabs show the name, else the title, else "Terminal N", agent terminals with a "Pi" badge.
+  name and an `agent` mark; tabs show the name, else the title, else "Terminal N", agent terminals with a "Mars" badge.
   Every connection that listed a session hears its list change (`terminals`: opened, closed, exited, renamed, by any
   viewer or the agent); a panel showing a terminal keeps it, one showing none attaches the newest new one. Archiving a
   session closes its terminals (`SessionArchived`, a host-lifetime contribution; no host is started for it).
@@ -956,7 +956,7 @@ translated phone drawer and intercept chat taps.
   inherent to the machine. Compatible reloads keep invitations; restarts invalidate them but keep cookies/revocations.
   Tests use only temporary directories and port 0, with no real provider requests (`devices`, `proxy-marker`, `tui`,
   and the fragment-link browser regression in `ui-parity.test.ts`).
-- **Loopback owner cookie** (Pi Mobile's, `src/runtime/loopback-cookie.ts`): the local owner's browser gets
+- **Loopback owner cookie** (Mars Mobile's, `src/runtime/loopback-cookie.ts`): the local owner's browser gets
   `p2_device_<port>` (HttpOnly, SameSite=Strict, secret in private `<data>/device-cookie`) when it loads an app page
   (`/`, `/s/…`) on loopback. Cookieless loopback requests stay the device owner (TUI, owner-link, first page load),
   except on a share's join page: only an owner by cookie or relay skips the form, so a fresh profile/incognito tab
@@ -1104,7 +1104,7 @@ translated phone drawer and intercept chat taps.
   `cmd.exe` with cross-spawn's quoting, the line passed in a variable (`windows-command.ts`); a daemon without the
   `process` operation fails for good with "update it"; an environment missing from `envs.json` shows `failed`. A lease
   gets servers only on an environment its session works on as the server records it (the catalog's session, the
-  subagent store's own locations; else "not where this session works"). Projects: the worker reads `<cwd>/.pi/mcp.json`
+  subagent store's own locations; else "not where this session works"). Projects: the worker reads `<cwd>/.mars/mcp.json`
   at each location through that location's environment and sends the text with `setLocations` (256 KiB at most); the
   manager checks it (`project.ts`): stdio servers only, run at that location for that session alone (no `runOn`,
   `shared`, `auth`, `oauth`, no HTTP, `${VAR}` never expanded), an entry without `command`/`url`/`type` only sets
@@ -1125,7 +1125,7 @@ translated phone drawer and intercept chat taps.
   session's, active subagents' own) at start, after moves and subagent commits, and whenever the view re-activates (a
   refusal because a newer generation runs ends it), and
   contributes one Durable extension `mcp` (a `self.writable`, rebuilt only when the tool list changes): deferred tools
-  named by `createMcpToolName` (every tool of a colliding name gets the hash suffix, as in pi), results through
+  named by `createMcpToolName` (every tool of a colliding name gets the hash suffix, as in mars), results through
   `toLlmContent` and `limitMcpContent`, `structuredOutput` only for tools with an output schema. Without code mode,
   `tool_search` is installed by the worker's registry (`durableRegistry`: once, while code mode is off and any extension
   has a deferred tool the model may call; MCP's and the terminal tool share it). Tests: `mcp.test.ts` (manager and views on a bare host with `test/fixtures/mcp-server.mjs` and
@@ -1137,13 +1137,13 @@ translated phone drawer and intercept chat taps.
 - **MCP sign-in** (`plugins/mcp/sign-in.ts`, `routes.ts`, `probe.ts`, `pages.ts`, `credentials.ts`; as built:
   `docs/mcp-durable.md` section 4.7): HTTP servers without an `Authorization` header use OAuth with pi-mcp's auth
   provider (stored tokens, refreshed, never a browser) and credentials in `<P2_DATA_DIR>/mcp-auth.json` (0600, keyed like
-  pi's). Owners sign in at `GET /mcp/sign-in/<server>` (the web MCP sheet opens it in a new tab): the device owner's
+  mars's). Owners sign in at `GET /mcp/sign-in/<server>` (the web MCP sheet opens it in a new tab): the device owner's
   browser returns to a loopback callback on the p2 host; for a relayed or public owner a probe page first fetches a
   nonce URL from a 127.0.0.1 listener of p2 (CORS for that origin only), and returns to loopback when it answers, else to
   `GET /mcp/callback` on the origin p2 is reached through. Pasting the final redirect URL (web sheet, TUI `/mcp paste`)
   always completes a waiting sign-in. One flow per server, in memory, 10 minutes; a pending one keeps the manager held.
   Tests: `mcp-sign-in.test.ts` (a fake authorization server and MCP server).
-- **One-shot agents** (`plugins/agent`, port of Pi Mobile a9335ebea and 0e238b29f): code mode scripts' `tools.agent({
+- **One-shot agents** (`plugins/agent`, port of Mars Mobile a9335ebea and 0e238b29f): code mode scripts' `tools.agent({
   prompt, schema, label?, model?, thinkingLevel?, tools? })` (`callers: ["tools"]`, replay-safe). One conversation per
   call, owned by the tool task (abort cascades) and recorded in the task-scoped `p2.agent-run` doc, so a rerun
   reattaches; it does so before validating the model, so a model removed from the configuration since does not fail
@@ -1153,7 +1153,7 @@ translated phone drawer and intercept chat taps.
   with pi-schema's `compile` (formats checked, as TypeBox's compiler did) against `schema`; failures go back to the
   same conversation, up to 3 attempts. The result's
   `structuredOutput` is the value, `details` `{ conversationId, attempts }`; nothing is reported to the parent. It has no
-  prompt section (as Pi Mobile 1b763d912): its description, Pi Mobile's verbatim, carries the usage notes, and code
+  prompt section (as Mars Mobile 1b763d912): its description, Mars Mobile's verbatim, carries the usage notes, and code
   mode's section lists it with the other tools scripts call. Model/thinking/tool
   validation is the subagent tool's `resolveChoice` (one-shot agents get no `team`): from the script's conversation's
   tools, `codemode` and `agent` included, so a one-shot agent's scripts may start one-shot agents again (owner
@@ -1181,7 +1181,7 @@ translated phone drawer and intercept chat taps.
   bar (Tools, Archive/Restore). The TUI lists no subagents, so archived ones need nothing there.
   `subagents.test.ts` covers tool archive, status, browser restore/archive-with-abort, send restoring and guest
   refusal; `ui-agents.test.ts` the bar and the sidebar row.
-- **Subagent cwd** (port of Pi Mobile 24e3fccdd; see **Agent locations**): `spawn` takes `cwd` (description and errors
+- **Subagent cwd** (port of Mars Mobile 24e3fccdd; see **Agent locations**): `spawn` takes `cwd` (description and errors
   verbatim), an existing directory resolved relative to the caller's cwd through the caller's environment
   (`absolutePath`, `canonicalPath`, `fileInfo` must be a directory; else "cwd X is not an existing directory."),
   configured as the child's `pi.agent` cwd and stored as `location: { env: the caller's environment, cwd }` on its
@@ -1192,7 +1192,7 @@ translated phone drawer and intercept chat taps.
   session's). `WorkspaceBackend` opens at the viewed conversation's location, and uploads write through
   `WorkspaceWrites.write({ location, upload })` (one workspace per environment, still serialized). The watch locates
   the git directory with `git rev-parse --git-dir --git-common-dir`, so a linked worktree's index/HEAD are watched.
-  With Pi Mobile 78056b34e: at every worker start and every in-place relocation the Harness moves the root and every
+  With Mars Mobile 78056b34e: at every worker start and every in-place relocation the Harness moves the root and every
   conversation that follows the session whose `pi.agent` cwd differs to the session's cwd, in one commit, before it
   is live (so nothing runs or resumes in a stale cwd). The followers come from the `ConversationLocations` local
   (`src/runtime/worker.ts`), served lazily by the subagents plugin (`placeSubagents`: subagents without a registry
@@ -1209,17 +1209,17 @@ translated phone drawer and intercept chat taps.
   a cwd-less subagent's bash in the remote cwd, after moving local and back; an own local location kept),
   `workspace-environment.test.ts` (linked worktree index watch), `ui-agents.test.ts` (bar, card, sidebar row,
   workspace panel).
-- **Code mode setting (owner decision, differs from Pi Mobile):** `settings.json` accepts Pi Mobile's `codemode`
+- **Code mode setting (owner decision, differs from Mars Mobile):** `settings.json` accepts Mars Mobile's `codemode`
   boolean, but p2 defaults it to on (mobile: off). `false` uninstalls the `codemode` extension live in every worker
   without unloading the plugin: the worker's `WorkerModels` exposes its current settings, and the codemode facet
   registers a switch in `ExtensionSwitches` (`src/runtime/durable.ts`), which leaves switched-off extensions out of
-  the Durable registry snapshots (a running script keeps its pinned tool). The `agent` tool stays installed (Pi Mobile
+  the Durable registry snapshots (a running script keeps its pinned tool). The `agent` tool stays installed (Mars Mobile
   uninstalls it with code mode); it is described only in code mode's listing. Durable 8bb180bec's code mode (prompt section
   listing callable tools, `models.*` through internal `pi.codemode.*` tools, coding-agent result layout) uses its
   defaults (`inlineBudget` 3000, `models` on, no namespaces). p2 lists tools only from the subagents' fixed coding-tool
   set, so internal tools never appear; nested-call rows show them by their script name (`models.classify`).
   `codemode-setting.test.ts` toggles it live; `durable-registry.test.ts` covers switches.
-- **Code mode card** (copied from Pi Mobile, `src/web/transcript.ts`, `Chat.tsx`, `icons.tsx`, `style.css`): the
+- **Code mode card** (copied from Mars Mobile, `src/web/transcript.ts`, `Chat.tsx`, `icons.tsx`, `style.css`): the
   `codemode` card shows `<>` Code with the script's first line; its body the script (highlighted JS, clipped to six
   lines with Show all) and the output. `ToolView.calls` is the one source of nested-call rows: live from
   `pi.live.nestedTools` (grouped by the model-issued call, depth from the `parentCallId` chain), settled from the
@@ -1228,7 +1228,7 @@ translated phone drawer and intercept chat taps.
   The TUI (`src/tui/messages.ts`) shows the first script line and indented rows (summary once settled, all with
   Ctrl+O) until the TUI port replaces it. `codemode-card.test.ts` covers grouping/depth, the details mapping, the TUI
   and the browser card (fixture `test/fixtures/codemode-card.ts`).
-- **Security limits (as Pi Mobile):** for static UI requests, guests may load their session's pages, the installable
+- **Security limits (as Mars Mobile):** for static UI requests, guests may load their session's pages, the installable
   app's `public/` files, the bundle manifest and files from the current or briefly retained bundle generations
   (`src/hosts/web.ts`); other web-host paths are 403. Authorized plugin routes retain their own guest permissions.
   Raw filesystem source paths are never served directly; bundle source maps are available as bundle files. `/chord`
@@ -1241,7 +1241,7 @@ translated phone drawer and intercept chat taps.
   in `src/runtime`, shared browser code in `src/web`. p2 is an independent npm workspace with pinned dependencies.
   `src/web/style.css` is a copy of mobile's stylesheet; terminal and environment styles live beside their plugins.
   Web tests verify guest access to bundle files and rejection of raw backend, mobile and private-data paths.
-- **Pi Mobile UI parity:** the web UI copies Pi Mobile's components, markup and styles; native Chord
+- **Mars Mobile UI parity:** the web UI copies Mars Mobile's components, markup and styles; native Chord
   locators/references, leases, permission checks and byte channels replace mobile's transport (no mobile imports, no
   protocol compatibility client). Not exercised against live services: real terminal programs/SSH without a
   packaged/local pi-env daemon build (offline terminal layout tests do not prove shell integration), external provider

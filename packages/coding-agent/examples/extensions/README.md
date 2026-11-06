@@ -6,10 +6,10 @@ Example extensions for pi-coding-agent.
 
 ```bash
 # Load an extension with --extension flag
-pi --extension examples/extensions/permission-gate.ts
+mars --extension examples/extensions/permission-gate.ts
 
 # Or copy to extensions directory for auto-discovery
-cp permission-gate.ts ~/.pi/agent/extensions/
+cp permission-gate.ts ~/.mars/agent/extensions/
 ```
 
 ## Examples
@@ -25,7 +25,7 @@ cp permission-gate.ts ~/.pi/agent/extensions/
 | `dirty-repo-guard.ts` | Prevents session changes with uncommitted git changes |
 | `gondolin/` | Route built-in tools and `!` commands into a Gondolin micro-VM |
 
-For isolation setup and limitations, see [Run Pi in an isolated environment](../../docs/containerization.md).
+For isolation setup and limitations, see [Run Mars in an isolated environment](../../docs/containerization.md).
 
 ### Custom Tools
 
@@ -99,7 +99,7 @@ For isolation setup and limitations, see [Run Pi in an isolated environment](../
 
 | Extension | Description |
 |-----------|-------------|
-| `mac-system-theme.ts` | Syncs pi theme with macOS dark/light mode |
+| `mac-system-theme.ts` | Syncs mars theme with macOS dark/light mode |
 
 ### Resources
 
@@ -146,7 +146,7 @@ See [docs/extensions.md](../../docs/extensions.md) for full documentation.
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-export default function (pi: ExtensionAPI) {
+export default function (mars: ExtensionAPI) {
   // Subscribe to lifecycle events
   pi.on("tool_call", async (event, ctx) => {
     if (event.toolName === "bash" && event.input.command?.includes("rm -rf")) {

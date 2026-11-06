@@ -1,7 +1,7 @@
 /** MarsAI OAuth: machine-bound device-code login, rotating refresh, and account/model queries. */
 
 import { randomBytes } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@earendil-works/pi-ai";
 import { getAgentDir } from "../../config.ts";
@@ -41,6 +41,12 @@ interface MarsFormError {
 	error_description?: string;
 }
 
+/** Credentials plus the freshly fetched bonus pool, so login can greet first-time bonus holders. */
+interface MarsLoginResult {
+	credentials: OAuthCredentials;
+	cliBonusCredits: number;
+}
+
 /**
  * Stable per-install fingerprint sent with every OAuth request. The server stores only its
  * hash and uses it to keep one machine on one account, so a stolen refresh token dies on
@@ -58,6 +64,26 @@ export function marsMachineId(): string {
 	mkdirSync(getAgentDir(), { recursive: true });
 	writeFileSync(file, `${id}\n`, { encoding: "utf8", mode: 0o600 });
 	return id;
+}
+
+const BONUS_NOTICE_FILE = "cli-bonus-notice-shown";
+
+/**
+ * Whether the first-login bonus notice should be shown: at most once per install, tracked by a
+ * local marker file (the userinfo field is the same on every refresh, so it cannot say "first").
+ */
+function shouldShowBonusNotice(): boolean {
+	if (existsSync(join(getAgentDir(), BONUS_NOTICE_FILE))) return false;
+	mkdirSync(getAgentDir(), { recursive: true });
+	writeFileSync(join(getAgentDir(), BONUS_NOTICE_FILE), "shown\n", { encoding: "utf8", mode: 0o600 });
+	return true;
+}
+
+/** Compact credit count for display: `5.0M`, `12.5K`, or the raw number. */
+export function formatCredits(value: number): string {
+	if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+	if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+	return String(value);
 }
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
@@ -166,6 +192,8 @@ export interface MarsAccountInfo {
 	balance: number;
 	token_balance: number;
 	free_credits: number;
+	/** First-login MarsCLI-only bonus pool: not API-spendable, the gateway spends it on CLI requests. */
+	cli_bonus_credits: number;
 	tokens_used: number;
 	rpm: number;
 	grant_id: string;
@@ -188,6 +216,7 @@ async function fetchAccount(
 			balance: typeof body.balance === "number" ? body.balance : 0,
 			token_balance: typeof body.token_balance === "number" ? body.token_balance : 0,
 			free_credits: typeof body.free_credits === "number" ? body.free_credits : 0,
+			cli_bonus_credits: typeof body.cli_bonus_credits === "number" ? body.cli_bonus_credits : 0,
 			tokens_used: typeof body.tokens_used === "number" ? body.tokens_used : 0,
 			rpm: typeof body.rpm === "number" ? body.rpm : 0,
 			grant_id: typeof body.grant_id === "string" ? body.grant_id : "",
@@ -211,18 +240,21 @@ export async function marsAccountInfo(
 	return fetchAccount(server, credentials.access, signal);
 }
 
-async function marsCredentials(server: string, token: MarsTokenResponse): Promise<OAuthCredentials> {
+async function marsCredentials(server: string, token: MarsTokenResponse): Promise<MarsLoginResult> {
 	const [apiKey, account] = await Promise.all([
 		mintApiKey(server, token.access_token),
 		fetchAccount(server, token.access_token),
 	]);
 	return {
-		access: token.access_token,
-		refresh: token.refresh_token,
-		expires: Date.now() + token.expires_in * 1000 - ACCESS_MARGIN_MS,
-		apiKey,
-		server,
-		email: account?.email,
+		credentials: {
+			access: token.access_token,
+			refresh: token.refresh_token,
+			expires: Date.now() + token.expires_in * 1000 - ACCESS_MARGIN_MS,
+			apiKey,
+			server,
+			email: account?.email,
+		},
+		cliBonusCredits: account?.cli_bonus_credits ?? 0,
 	};
 }
 
@@ -286,7 +318,15 @@ export async function marsDeviceLogin(callbacks: OAuthLoginCallbacks): Promise<O
 		copyCodeOnConfirm: false,
 	});
 	const token = await pollForToken(server, created, callbacks.signal);
-	return marsCredentials(server, token);
+	const { credentials, cliBonusCredits } = await marsCredentials(server, token);
+	if (cliBonusCredits > 0 && shouldShowBonusNotice()) {
+		// ponytail: "expires in 30 days" assumes the server's default expiry; render from a
+		// userinfo field when the server exposes the actual bonus expiry.
+		callbacks.onProgress?.(
+			`Bonus: ${formatCredits(cliBonusCredits)} MarsCLI credits added — usable only inside MarsCLI, expires in 30 days.`,
+		);
+	}
+	return credentials;
 }
 
 /** Exchange the rotating refresh token; a replay or a foreign machine fails here and forces a new login. */

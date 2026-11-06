@@ -17,6 +17,7 @@ import type {
 } from "../../core/extensions/types.ts";
 import { resolveConfigValue } from "../../core/resolve-config-value.ts";
 import {
+	formatCredits,
 	type MarsAccountInfo,
 	marsAccountInfo,
 	marsApiKey,
@@ -151,6 +152,9 @@ function accountLines(stored: Record<string, unknown>, account: MarsAccountInfo 
 	if (account) {
 		lines.push(`balance: ${account.balance}`);
 		lines.push(`free credits: ${account.free_credits}`);
+		// Distinct from the spendable balances: the bonus only applies to CLI requests.
+		if (account.cli_bonus_credits > 0)
+			lines.push(`cli bonus: ${formatCredits(account.cli_bonus_credits)} (CLI-only)`);
 		lines.push(`tokens used: ${account.tokens_used}`);
 		lines.push(`rpm: ${account.rpm}`);
 		if (account.expires_at > 0) lines.push(`grant expires: ${new Date(account.expires_at * 1000).toISOString()}`);

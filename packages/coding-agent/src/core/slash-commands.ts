@@ -25,6 +25,7 @@ export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 	{ name: "export", description: "Export session (HTML default, or specify path: .html/.jsonl)" },
 	{ name: "import", description: "Import a JSONL session, preserving its ID and working directory" },
 	{ name: "handoff", description: "Export session as JSONL for another machine", argumentHint: "[path]" },
+	{ name: "init", description: "Create or improve AGENTS.md using project stats", argumentHint: "[focus]" },
 	{ name: "ghost", description: "Replay last prompt on the free model for comparison" },
 	{ name: "share", description: "Share session via a Radius artifact or a GitHub gist" },
 	{ name: "bug", description: "Report a bug to the MarsAI team", argumentHint: "<description>" },

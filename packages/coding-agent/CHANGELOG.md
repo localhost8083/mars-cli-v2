@@ -8,6 +8,8 @@
 
 ### Added
 
+- `mars pack` CLI command: exports tracked files as XML for handoff to another model. Respects `.gitignore` via the find tool, skips binaries, redacts secrets (private keys, `api_key`/`token`/`password` assignments), caps output at 200KB (`--max-bytes`, `--full` overrides), `--query <glob>` filters files
+- `/init [focus]` TUI command: collects project stats (manifests, scripts, workspaces, file counts, existing instruction files) and submits an AGENTS.md setup prompt so the agent investigates and writes/improves `AGENTS.md` itself
 - MarsAI provider extension: OAuth device flow plus API key auth, the `/mars` account command, and `marsai/auto-free` free-tier routing for delegated work (`?`, `/ghost`, `/budget`, subagents, auto-recon)
 - Built-in subagent extension: single, parallel, and chained dispatch to isolated child `mars` processes with their own context windows; explore-first auto-recon appends a repo map to the system prompt on the first turn of a fresh TUI session
 - `web_fetch` and `web_search` tools (MarsAI extension): manual-redirect fetching with per-hop private-network blocking, and DuckDuckGo lite search

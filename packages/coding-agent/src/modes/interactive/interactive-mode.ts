@@ -186,6 +186,7 @@ import { TrustSelectorComponent } from "./components/trust-selector.ts";
 import { UserMessageComponent } from "./components/user-message.ts";
 import { UserMessageSelectorComponent } from "./components/user-message-selector.ts";
 import { editInExternalEditor } from "./external-editor.ts";
+import { buildInitPrompt, collectProjectStats } from "./init-agents.ts";
 import { refreshModelCatalogs } from "./model-catalog-refresh.ts";
 import { getModelSearchText } from "./model-search.ts";
 import { type BlockedStatus, ProgramStatusReporter } from "./program-status-reporter.ts";
@@ -3350,6 +3351,11 @@ export class InteractiveMode {
 				this.editor.setText("");
 				return;
 			}
+			if (text === "/init" || text.startsWith("/init ")) {
+				this.editor.setText("");
+				await this.handleInitCommand(text.slice("/init".length).trim());
+				return;
+			}
 			if (text === "/ghost") {
 				this.editor.setText("");
 				void this.handleGhostCommand();
@@ -5415,6 +5421,23 @@ export class InteractiveMode {
 			this.showStatus(`Budget mode: ${model.id} (free tier, session only). /budget off restores.`);
 		} catch (error) {
 			this.showError(error instanceof Error ? error.message : String(error));
+		}
+	}
+
+	/**
+	 * `/init [focus]` collects project stats and submits the AGENTS.md setup prompt
+	 * as a normal user message, so the agent investigates with its tools and writes
+	 * the file itself.
+	 */
+	private async handleInitCommand(args: string): Promise<void> {
+		this.showStatus("init: collecting project stats…");
+		try {
+			const cwd = this.sessionManager.getCwd();
+			const stats = await collectProjectStats(cwd);
+			const prompt = buildInitPrompt(stats, args, cwd);
+			await this.session.prompt(prompt);
+		} catch (error) {
+			this.showError(`Init failed: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 
